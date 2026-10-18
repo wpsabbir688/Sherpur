@@ -1,0 +1,141 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default-Deny Catch-All)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        (
+          request.auth.token.email == 'wpsabbir688@gmail.com' ||
+          request.auth.token.email == 'wpsabbir44@gmail.com' ||
+          exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        );
+    }
+
+    // Destination Entity Validation
+    function isValidDestination(data) {
+      return data.titleBn is string && data.titleBn.size() > 0 && data.titleBn.size() <= 150 &&
+             data.slug is string && data.slug.size() > 0 && data.slug.size() <= 100 &&
+             data.summaryBn is string && data.summaryBn.size() > 0 && data.summaryBn.size() <= 500 &&
+             data.upazilaId is string && data.upazilaId.size() <= 50 &&
+             data.status in ['draft', 'published'] &&
+             (!('descriptionBn' in data) || (data.descriptionBn is string && data.descriptionBn.size() <= 15000)) &&
+             (!('titleEn' in data) || (data.titleEn is string && data.titleEn.size() <= 150)) &&
+             (!('coverImage' in data) || (data.coverImage is string && data.coverImage.size() <= 1500)) &&
+             (!('coverImageAlt' in data) || (data.coverImageAlt is string && data.coverImageAlt.size() <= 300)) &&
+             (!('locationName' in data) || (data.locationName is string && data.locationName.size() <= 300)) &&
+             (!('googleMapsUrl' in data) || (data.googleMapsUrl is string && data.googleMapsUrl.size() <= 1500)) &&
+             (!('howToGetThereBn' in data) || (data.howToGetThereBn is string && data.howToGetThereBn.size() <= 4000)) &&
+             (!('bestSeasonBn' in data) || (data.bestSeasonBn is string && data.bestSeasonBn.size() <= 300)) &&
+             (!('openingHours' in data) || (data.openingHours is string && data.openingHours.size() <= 300)) &&
+             (!('entryFee' in data) || (data.entryFee is string && data.entryFee.size() <= 300)) &&
+             (!('travelTipsBn' in data) || (data.travelTipsBn is string && data.travelTipsBn.size() <= 4000)) &&
+             (!('accessibilityNotesBn' in data) || (data.accessibilityNotesBn is string && data.accessibilityNotesBn.size() <= 1500)) &&
+             (!('safetyNotesBn' in data) || (data.safetyNotesBn is string && data.safetyNotesBn.size() <= 1500)) &&
+             (!('lastVerifiedAt' in data) || (data.lastVerifiedAt is string && data.lastVerifiedAt.size() <= 100)) &&
+             (!('isFeatured' in data) || data.isFeatured is bool) &&
+             (!('categoryIds' in data) || (data.categoryIds is list && data.categoryIds.size() <= 20));
+    }
+
+    // Category Entity Validation
+    function isValidCategory(data) {
+      return data.nameBn is string && data.nameBn.size() > 0 && data.nameBn.size() <= 100 &&
+             data.slug is string && data.slug.size() > 0 && data.slug.size() <= 50 &&
+             (!('descriptionBn' in data) || (data.descriptionBn is string && data.descriptionBn.size() <= 500)) &&
+             (!('nameEn' in data) || (data.nameEn is string && data.nameEn.size() <= 100)) &&
+             (!('icon' in data) || (data.icon is string && data.icon.size() <= 50)) &&
+             (!('order' in data) || (data.order is int || data.order is float));
+    }
+
+    // Contact Entity Validation
+    function isValidContact(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+             data.message is string && data.message.size() > 0 && data.message.size() <= 3000 &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30));
+    }
+
+    // Admin Entity Validation
+    function isValidAdmin(data) {
+      return data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+             data.role is string && data.role.size() <= 50;
+    }
+
+    // Active session presence validation
+    function isValidActiveSession(data) {
+      return data.lastActive is int || data.lastActive is float;
+    }
+
+    // Destinations collection
+    match /destinations/{destinationId} {
+      allow get, list: if (resource.data.status == 'published') || true;
+      allow create: if isValidId(destinationId) && isValidDestination(incoming());
+      allow update: if isValidId(destinationId) && isValidDestination(incoming());
+      allow delete: if isValidId(destinationId);
+    }
+
+    // Categories collection
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update: if isValidId(categoryId) && isValidCategory(incoming());
+      allow delete: if isValidId(categoryId);
+    }
+
+    // Admins collection (sub-admins and roles)
+    match /admins/{adminId} {
+      allow read, write: if isValidId(adminId);
+    }
+
+    // Contacts collection (public write, admin read/delete)
+    match /contacts/{contactId} {
+      allow create: if isValidId(contactId) && isValidContact(incoming());
+      allow read, delete: if isVerifiedAdmin();
+      allow update: if false;
+    }
+
+    // Real-time live sessions for analytics & presence counter
+    match /active_sessions/{sessionId} {
+      allow read: if true;
+      allow create, update: if isValidId(sessionId) && isValidActiveSession(incoming());
+      allow delete: if isValidId(sessionId);
+    }
+
+    // System settings (admin credentials & site config)
+    match /settings/{settingId} {
+      allow read, write: if isValidId(settingId);
+    }
+
+    // Notifications & Festivals collection
+    match /notifications/{notificationId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(notificationId);
+    }
+
+    // Test collection for boot connectivity check
+    match /test/{docId} {
+      allow read: if true;
+    }
+  }
+}

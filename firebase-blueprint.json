@@ -1,0 +1,311 @@
+{
+  "entities": {
+    "Destination": {
+      "title": "Destination",
+      "description": "A verified tourist destination or place of interest in Sherpur District.",
+      "type": "object",
+      "properties": {
+        "titleBn": {
+          "type": "string",
+          "description": "Bengali title of the destination",
+          "maxLength": 150
+        },
+        "titleEn": {
+          "type": "string",
+          "description": "English title of the destination",
+          "maxLength": 150
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-safe unique identifier",
+          "pattern": "^[a-z0-9-]+$",
+          "maxLength": 100
+        },
+        "summaryBn": {
+          "type": "string",
+          "description": "Short Bengali summary",
+          "maxLength": 500
+        },
+        "descriptionBn": {
+          "type": "string",
+          "description": "Full Bengali description",
+          "maxLength": 10000
+        },
+        "upazilaId": {
+          "type": "string",
+          "description": "Upazila in Sherpur",
+          "enum": ["sherpur-sadar", "nalitabari", "jhinaigati", "sreebardi", "nakla"],
+          "maxLength": 50
+        },
+        "categoryIds": {
+          "type": "array",
+          "description": "List of category IDs"
+        },
+        "coverImage": {
+          "type": "string",
+          "description": "Primary display image URL",
+          "maxLength": 1000
+        },
+        "coverImageAlt": {
+          "type": "string",
+          "description": "Accessibility alt text",
+          "maxLength": 250
+        },
+        "locationName": {
+          "type": "string",
+          "description": "Location description",
+          "maxLength": 250
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Geographical latitude"
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Geographical longitude"
+        },
+        "googleMapsUrl": {
+          "type": "string",
+          "description": "Google Maps link",
+          "maxLength": 1000
+        },
+        "howToGetThereBn": {
+          "type": "string",
+          "description": "Route directions",
+          "maxLength": 3000
+        },
+        "bestSeasonBn": {
+          "type": "string",
+          "description": "Best visiting season",
+          "maxLength": 200
+        },
+        "openingHours": {
+          "type": "string",
+          "description": "Verified opening hours",
+          "maxLength": 200
+        },
+        "entryFee": {
+          "type": "string",
+          "description": "Verified entry fee",
+          "maxLength": 200
+        },
+        "travelTipsBn": {
+          "type": "string",
+          "description": "Practical tips",
+          "maxLength": 3000
+        },
+        "accessibilityNotesBn": {
+          "type": "string",
+          "description": "Accessibility details",
+          "maxLength": 1000
+        },
+        "safetyNotesBn": {
+          "type": "string",
+          "description": "Safety advice",
+          "maxLength": 1000
+        },
+        "lastVerifiedAt": {
+          "type": "string",
+          "description": "Date verified",
+          "maxLength": 50
+        },
+        "status": {
+          "type": "string",
+          "description": "Publish status",
+          "enum": ["draft", "published"],
+          "maxLength": 20
+        },
+        "isFeatured": {
+          "type": "boolean",
+          "description": "Featured on homepage"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp or server time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp or server time"
+        }
+      },
+      "required": ["titleBn", "slug", "summaryBn", "upazilaId", "status"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "A classification category for Sherpur tourist places.",
+      "type": "object",
+      "properties": {
+        "nameBn": {
+          "type": "string",
+          "description": "Bengali category name",
+          "maxLength": 100
+        },
+        "nameEn": {
+          "type": "string",
+          "description": "English category name",
+          "maxLength": 100
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-safe slug",
+          "maxLength": 50
+        },
+        "descriptionBn": {
+          "type": "string",
+          "description": "Bengali description",
+          "maxLength": 300
+        },
+        "icon": {
+          "type": "string",
+          "description": "Lucide icon identifier",
+          "maxLength": 50
+        },
+        "order": {
+          "type": "number",
+          "description": "Display order"
+        }
+      },
+      "required": ["nameBn", "slug"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Authorized administrator document with RBAC support.",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Unique admin username",
+          "maxLength": 100
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of administrator",
+          "maxLength": 150
+        },
+        "password": {
+          "type": "string",
+          "description": "Admin login password",
+          "maxLength": 200
+        },
+        "role": {
+          "type": "string",
+          "description": "Role level: superadmin or editor (add places only)",
+          "enum": ["superadmin", "editor"],
+          "maxLength": 50
+        },
+        "status": {
+          "type": "string",
+          "description": "Account status",
+          "enum": ["active", "inactive"],
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp"
+        }
+      },
+      "required": ["username", "role"]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "Feedback or query from visitors.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Visitor full name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Visitor email address",
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "description": "Visitor phone number",
+          "maxLength": 30
+        },
+        "message": {
+          "type": "string",
+          "description": "Message content",
+          "maxLength": 3000
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp"
+        }
+      },
+      "required": ["name", "email", "message"]
+    },
+    "ActiveSession": {
+      "title": "ActiveSession",
+      "description": "Real-time presence session for live analytics.",
+      "type": "object",
+      "properties": {
+        "lastActive": {
+          "type": "number",
+          "description": "Epoch millisecond of last heartbeat"
+        },
+        "currentPath": {
+          "type": "string",
+          "description": "Current view or hash",
+          "maxLength": 200
+        },
+        "device": {
+          "type": "string",
+          "description": "Device category",
+          "maxLength": 100
+        }
+      },
+      "required": ["lastActive"]
+    },
+    "SystemSetting": {
+      "title": "SystemSetting",
+      "description": "System settings and admin credentials configuration.",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Admin username",
+          "maxLength": 100
+        },
+        "password": {
+          "type": "string",
+          "description": "Admin password hash or string",
+          "maxLength": 200
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update ISO time"
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/destinations/{destinationId}": {
+      "schema": "Destination",
+      "description": "Tourist attractions and destinations in Sherpur"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Destination categories"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Allowlisted administrators"
+    },
+    "/contacts/{contactId}": {
+      "schema": "ContactMessage",
+      "description": "User feedback and inquiries"
+    },
+    "/active_sessions/{sessionId}": {
+      "schema": "ActiveSession",
+      "description": "Live active sessions for dashboard presence counter"
+    },
+    "/settings/{settingId}": {
+      "schema": "SystemSetting",
+      "description": "Global settings and credentials"
+    }
+  }
+}
