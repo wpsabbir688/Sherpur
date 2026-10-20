@@ -19,6 +19,8 @@ import {
   Home,
   ChevronRight,
   Bell,
+  Users,
+  User,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UPAZILAS } from '../../data/initialData';
@@ -27,6 +29,7 @@ interface HeaderProps {
   currentView: string;
   onNavigate: (view: string, param?: string) => void;
   onOpenAdminLogin: () => void;
+  onOpenUserAuth?: () => void;
   unreadNotificationsCount?: number;
   onOpenNotifications?: () => void;
 }
@@ -35,13 +38,14 @@ export const Header: React.FC<HeaderProps> = ({
   currentView,
   onNavigate,
   onOpenAdminLogin,
+  onOpenUserAuth,
   unreadNotificationsCount = 0,
   onOpenNotifications,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [upazilaDropdownOpen, setUpazilaDropdownOpen] = useState(false);
   const [mobileUpazilaExpanded, setMobileUpazilaExpanded] = useState(true);
-  const { user, adminUsername, isAdmin, isSuperAdmin, signOut } = useAuth();
+  const { user, userProfile, adminUsername, adminName, isAdmin, isSuperAdmin, signOut } = useAuth();
 
   // Prevent background scrolling and handle Escape key when mobile menu is open
   useEffect(() => {
@@ -106,35 +110,35 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Main navigation bar */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-1.5 sm:gap-2">
-          {/* Logo / Brand */}
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2">
+          {/* Logo / Brand - non-shrinking, clean */}
           <button
             onClick={() => handleNavClick('home')}
-            className="flex items-center gap-2 sm:gap-3 text-left group transition min-w-0 flex-1 sm:flex-initial cursor-pointer touch-manipulation"
+            className="flex items-center gap-2 sm:gap-3 text-left group transition shrink-0 cursor-pointer touch-manipulation"
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#1E5638] to-[#123923] flex items-center justify-center text-white shadow-sm shadow-emerald-900/20 group-hover:scale-105 transition-transform shrink-0">
               <Compass className="w-4.5 h-4.5 sm:w-6 sm:h-6 text-emerald-300" />
             </div>
             <div className="min-w-0">
-              <div className="text-sm sm:text-lg md:text-xl font-bold tracking-tight text-[#143E27] flex items-center gap-1.5 leading-tight">
-                <span className="truncate">শেরপুর ভ্রমণ গাইড</span>
-                <span className="hidden md:inline-block text-[10px] bg-emerald-100 text-[#143E27] px-1.5 py-0.5 rounded font-semibold border border-emerald-200 shrink-0">
+              <div className="text-sm sm:text-base xl:text-lg font-bold tracking-tight text-[#143E27] flex items-center gap-1.5 leading-tight whitespace-nowrap">
+                <span>শেরপুর ভ্রমণ গাইড</span>
+                <span className="hidden 2xl:inline-block text-[10px] bg-emerald-100 text-[#143E27] px-1.5 py-0.5 rounded font-semibold border border-emerald-200 shrink-0">
                   Sherpur
                 </span>
               </div>
-              <p className="text-[10px] sm:text-[11px] text-[#556960] tracking-wide font-medium truncate hidden sm:block">
+              <p className="text-[10px] text-[#556960] tracking-wide font-medium truncate hidden 2xl:block">
                 Sherpur District Travel Guide & Directory
               </p>
             </div>
           </button>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-1 text-[15px] font-medium text-[#2C4035]">
+          {/* Desktop Nav Links - xl:flex prevents crowded wrapping on medium laptop screens */}
+          <nav className="hidden xl:flex items-center gap-0.5 2xl:gap-1 text-xs 2xl:text-sm font-semibold text-[#2C4035] whitespace-nowrap">
             <button
               onClick={() => handleNavClick('home')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                 currentView === 'home'
-                  ? 'bg-[#1E5638]/10 text-[#143E27] font-semibold'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
                   : 'hover:bg-gray-100 hover:text-black'
               }`}
             >
@@ -142,9 +146,9 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => handleNavClick('places')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                 currentView === 'places'
-                  ? 'bg-[#1E5638]/10 text-[#143E27] font-semibold'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
                   : 'hover:bg-gray-100 hover:text-black'
               }`}
             >
@@ -156,14 +160,14 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => setUpazilaDropdownOpen(!upazilaDropdownOpen)}
                 onMouseEnter={() => setUpazilaDropdownOpen(true)}
-                className={`px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${
+                className={`px-2.5 2xl:px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap ${
                   currentView === 'upazilas'
-                    ? 'bg-[#1E5638]/10 text-[#143E27] font-semibold'
+                    ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
                     : 'hover:bg-gray-100 hover:text-black'
                 }`}
               >
                 <span>উপজেলাসমূহ</span>
-                <ChevronDown className="w-4 h-4 text-gray-500 group-hover:rotate-180 transition-transform" />
+                <ChevronDown className="w-3.5 h-3.5 text-gray-500 group-hover:rotate-180 transition-transform" />
               </button>
               {upazilaDropdownOpen && (
                 <div
@@ -189,29 +193,60 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => handleNavClick('categories')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                 currentView === 'categories'
-                  ? 'bg-[#1E5638]/10 text-[#143E27] font-semibold'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
                   : 'hover:bg-gray-100 hover:text-black'
               }`}
             >
               ক্যাটাগরি
             </button>
             <button
+              onClick={() => handleNavClick('community')}
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+                currentView === 'community'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
+                  : 'hover:bg-gray-100 hover:text-black'
+              }`}
+            >
+              কমিউনিটি
+            </button>
+            <button
+              onClick={() => handleNavClick('trips')}
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+                currentView === 'trips'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
+                  : 'hover:bg-gray-100 hover:text-black'
+              }`}
+            >
+              ট্রিপ প্ল্যানার
+            </button>
+            <button
               onClick={() => handleNavClick('guides')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                 currentView === 'guides'
-                  ? 'bg-[#1E5638]/10 text-[#143E27] font-semibold'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
                   : 'hover:bg-gray-100 hover:text-black'
               }`}
             >
               ভ্রমণ সহায়িকা
             </button>
             <button
+              onClick={() => handleNavClick('team')}
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                currentView === 'team'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
+                  : 'hover:bg-gray-100 hover:text-black'
+              }`}
+            >
+              <Users className="w-4 h-4 text-emerald-700" />
+              <span>আমাদের টিম</span>
+            </button>
+            <button
               onClick={() => handleNavClick('about')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                 currentView === 'about'
-                  ? 'bg-[#1E5638]/10 text-[#143E27] font-semibold'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
                   : 'hover:bg-gray-100 hover:text-black'
               }`}
             >
@@ -219,9 +254,9 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => handleNavClick('contact')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                 currentView === 'contact'
-                  ? 'bg-[#1E5638]/10 text-[#143E27] font-semibold'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
                   : 'hover:bg-gray-100 hover:text-black'
               }`}
             >
@@ -230,26 +265,53 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Action Buttons: Admin Login & Notification & Hamburger */}
-          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {isAdmin ? (
-              <div className="flex items-center gap-1 sm:gap-1.5">
+              <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                 <button
                   onClick={() => handleNavClick('admin')}
-                  className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 min-h-[38px] sm:min-h-[40px] rounded-xl text-xs font-semibold transition cursor-pointer touch-manipulation ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[38px] sm:min-h-[40px] rounded-xl text-xs font-bold transition cursor-pointer touch-manipulation whitespace-nowrap ${
                     currentView === 'admin'
                       ? 'bg-[#143E27] text-white shadow-xs'
-                      : 'bg-emerald-100 text-[#143E27] hover:bg-emerald-200 border border-emerald-300'
+                      : 'bg-emerald-50 text-[#143E27] hover:bg-emerald-100 border border-emerald-200'
                   }`}
                   title="অ্যাডমিন ড্যাশবোর্ড"
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700 shrink-0" />
-                  <span className="hidden sm:inline">
-                    {isSuperAdmin ? 'ড্যাশবোর্ড' : 'অ্যাডমিন'}
+                  <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span className="font-bold max-w-[85px] sm:max-w-[130px] truncate">
+                    {adminName || 'মো. সাব্বির হোসেন'}
+                  </span>
+                  <span className="hidden sm:inline-block text-[10px] bg-emerald-200/90 text-emerald-950 px-1.5 py-0.5 rounded font-mono font-bold">
+                    {isSuperAdmin ? 'Admin' : 'Editor'}
                   </span>
                 </button>
                 <button
                   onClick={() => signOut()}
-                  className="p-2 min-h-[38px] min-w-[38px] text-gray-400 hover:text-red-600 rounded-xl hover:bg-gray-100 transition cursor-pointer touch-manipulation flex items-center justify-center"
+                  className="p-2 min-h-[38px] min-w-[38px] text-gray-400 hover:text-red-600 rounded-xl hover:bg-gray-100 transition cursor-pointer touch-manipulation flex items-center justify-center shrink-0"
+                  title="লগআউট"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : user ? (
+              <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                <button
+                  onClick={() => handleNavClick('profile')}
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[38px] sm:min-h-[40px] rounded-xl text-xs font-bold transition cursor-pointer touch-manipulation whitespace-nowrap ${
+                    currentView === 'profile'
+                      ? 'bg-[#143E27] text-white shadow-xs'
+                      : 'bg-emerald-50 text-[#143E27] hover:bg-emerald-100 border border-emerald-200'
+                  }`}
+                  title="আমার প্রোফাইল"
+                >
+                  <User className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                  <span className="font-bold max-w-[85px] sm:max-w-[120px] truncate">
+                    {userProfile?.displayName || user.displayName || 'আমার প্রোফাইল'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => signOut()}
+                  className="p-2 min-h-[38px] min-w-[38px] text-gray-400 hover:text-red-600 rounded-xl hover:bg-gray-100 transition cursor-pointer touch-manipulation flex items-center justify-center shrink-0"
                   title="লগআউট"
                 >
                   <LogOut className="w-4 h-4" />
@@ -257,9 +319,9 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             ) : (
               <button
-                onClick={onOpenAdminLogin}
-                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 min-h-[38px] sm:min-h-[40px] text-xs font-semibold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-xl transition cursor-pointer touch-manipulation shrink-0"
-                title="অ্যাডমিন লগইন"
+                onClick={onOpenUserAuth || onOpenAdminLogin}
+                className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 min-h-[38px] sm:min-h-[40px] text-xs font-bold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-xl transition cursor-pointer touch-manipulation shrink-0"
+                title="লগইন / রেজিস্টার"
               >
                 <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700 shrink-0" />
                 <span className="hidden sm:inline">লগইন</span>
@@ -284,10 +346,10 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Mobile hamburger menu button */}
+            {/* Mobile / Tablet hamburger menu button (shown when width < xl: 1280px) */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center rounded-xl text-[#143E27] bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 active:scale-95 transition border border-emerald-200 focus:outline-none cursor-pointer touch-manipulation shadow-2xs shrink-0"
+              className="xl:hidden p-2 min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center rounded-xl text-[#143E27] bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 active:scale-95 transition border border-emerald-200 focus:outline-none cursor-pointer touch-manipulation shadow-2xs shrink-0"
               aria-label="মোবাইল মেনু খুলুন"
               type="button"
             >
@@ -299,7 +361,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Drawer (Rendered in React Portal to escape any backdrop-filter or header clipping constraints) */}
       {mobileMenuOpen && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[9999] lg:hidden flex justify-end">
+        <div className="fixed inset-0 z-[9999] xl:hidden flex justify-end">
           {/* Backdrop overlay */}
           <div
             onClick={() => setMobileMenuOpen(false)}
@@ -449,6 +511,36 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               <button
+                onClick={() => handleNavClick('community')}
+                className={`w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition cursor-pointer touch-manipulation ${
+                  currentView === 'community'
+                    ? 'bg-emerald-100 text-[#143E27]'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Users className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>ট্রাভেলার্স কমিউনিটি</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </button>
+
+              <button
+                onClick={() => handleNavClick('trips')}
+                className={`w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition cursor-pointer touch-manipulation ${
+                  currentView === 'trips'
+                    ? 'bg-emerald-100 text-[#143E27]'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Compass className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>ট্রিপ প্ল্যানার ও বাজেট</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </button>
+
+              <button
                 onClick={() => handleNavClick('guides')}
                 className={`w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition cursor-pointer touch-manipulation ${
                   currentView === 'guides'
@@ -459,6 +551,21 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="flex items-center gap-3">
                   <BookOpen className="w-4 h-4 text-emerald-700 shrink-0" />
                   <span>ভ্রমণ সহায়িকা ও রুট</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </button>
+
+              <button
+                onClick={() => handleNavClick('team')}
+                className={`w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition cursor-pointer touch-manipulation ${
+                  currentView === 'team'
+                    ? 'bg-emerald-100 text-[#143E27]'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Users className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>আমাদের টিম ও গবেষক প্যানেল</span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </button>
@@ -494,32 +601,89 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               {isAdmin ? (
-                <button
-                  onClick={() => handleNavClick('admin')}
-                  className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold bg-[#143E27] text-white flex items-center justify-between shadow-sm mt-3 cursor-pointer touch-manipulation"
-                >
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-300 shrink-0" />
-                    <span>অ্যাডমিন ড্যাশবোর্ড ({adminUsername || 'sabbir'})</span>
-                  </div>
-                  <span className="text-[10px] bg-emerald-700 px-2 py-0.5 rounded font-mono">
-                    {isSuperAdmin ? 'Super' : 'Editor'}
-                  </span>
-                </button>
+                <div className="space-y-2 mt-3 pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleNavClick('admin');
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold bg-[#143E27] text-white flex items-center justify-between shadow-xs cursor-pointer touch-manipulation"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <ShieldCheck className="w-4 h-4 text-emerald-300 shrink-0" />
+                      <span className="truncate">{adminName || 'মো. সাব্বির হোসেন'}</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded font-mono shrink-0">
+                      {isSuperAdmin ? 'Super Admin' : 'Editor'}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      signOut();
+                    }}
+                    className="w-full py-2 px-3 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 flex items-center justify-center gap-1.5 transition cursor-pointer touch-manipulation"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>লগআউট করুন</span>
+                  </button>
+                </div>
+              ) : user ? (
+                <div className="space-y-2 mt-3 pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleNavClick('profile');
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold bg-[#143E27] text-white flex items-center justify-between shadow-xs cursor-pointer touch-manipulation"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <User className="w-4 h-4 text-emerald-300 shrink-0" />
+                      <span className="truncate">{userProfile?.displayName || user.displayName || 'আমার প্রোফাইল'}</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded shrink-0">
+                      ভ্রমণকারী
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      signOut();
+                    }}
+                    className="w-full py-2 px-3 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 flex items-center justify-center gap-1.5 transition cursor-pointer touch-manipulation"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>লগআউট করুন</span>
+                  </button>
+                </div>
               ) : (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenAdminLogin();
-                  }}
-                  className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold bg-emerald-50 text-[#143E27] border border-emerald-200 flex items-center justify-between shadow-xs mt-3 cursor-pointer touch-manipulation"
-                >
-                  <div className="flex items-center gap-2">
-                    <LogIn className="w-4 h-4 text-emerald-700 shrink-0" />
+                <div className="space-y-2 mt-3 pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      if (onOpenUserAuth) onOpenUserAuth();
+                      else onOpenAdminLogin();
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold bg-[#143E27] text-white flex items-center justify-between shadow-xs cursor-pointer touch-manipulation"
+                  >
+                    <div className="flex items-center gap-2">
+                      <LogIn className="w-4 h-4 text-emerald-300 shrink-0" />
+                      <span>লগইন / রেজিস্টার করুন</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-emerald-300" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenAdminLogin();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-emerald-900 hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
                     <span>অ্যাডমিন প্যানেলে লগইন</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-emerald-700" />
-                </button>
+                  </button>
+                </div>
               )}
             </div>
 

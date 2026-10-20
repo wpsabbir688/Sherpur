@@ -2,5 +2,7 @@
   "name": "শেরপুর ভ্রমণ গাইড | Sherpur Travel Guide",
   "description": "শেরপুরের পাহাড়, বন, নদী ও ঐতিহ্যবাহী পর্যটন স্থানসমূহের নির্ভরযোগ্য ডিজিটাল ভ্রমণ গাইড ও ডিরেক্টরি।",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

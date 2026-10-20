@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Send, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { submitContactMessage } from '../services/contactService';
+import { recordAnalyticsEvent } from '../services/analyticsService';
 
 export const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -29,6 +30,9 @@ export const ContactPage: React.FC = () => {
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         message: formData.message.trim(),
+      });
+      recordAnalyticsEvent('contact_click', {
+        metadata: { type: 'contact_message_submit' },
       });
       setSubmitted(true);
       setFormData({ name: '', email: '', phone: '', message: '' });

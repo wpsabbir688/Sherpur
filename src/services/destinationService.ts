@@ -97,7 +97,12 @@ export async function saveDestination(dest: Partial<Destination>): Promise<strin
   if (dest.entryFee) payload.entryFee = dest.entryFee;
   if (dest.travelTipsBn) payload.travelTipsBn = dest.travelTipsBn;
   if (dest.accessibilityNotesBn) payload.accessibilityNotesBn = dest.accessibilityNotesBn;
-  if (dest.safetyNotesBn) payload.safetyNotesBn = dest.safetyNotesBn;
+  if (dest.createdBy) payload.createdBy = dest.createdBy;
+  if (dest.updatedBy) payload.updatedBy = dest.updatedBy;
+  if (dest.authorName) payload.authorName = dest.authorName;
+  if (dest.authorRole) payload.authorRole = dest.authorRole;
+  if (dest.authorAvatar) payload.authorAvatar = dest.authorAvatar;
+  if (dest.authorBio) payload.authorBio = dest.authorBio;
   if (dest.lastVerifiedAt) payload.lastVerifiedAt = dest.lastVerifiedAt;
   if (dest.isFeatured !== undefined) payload.isFeatured = Boolean(dest.isFeatured);
   if (dest.createdAt) payload.createdAt = dest.createdAt;

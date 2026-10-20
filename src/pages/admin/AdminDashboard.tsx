@@ -33,9 +33,17 @@ import {
   Lock,
   Bell,
   Calendar,
+  BarChart3,
+  UserCircle,
+  ChevronRight,
+  LogOut,
+  Menu,
+  MessageCircle,
+  Flag,
 } from 'lucide-react';
 import { Destination, Category, UpazilaId, ContactMessage, AdminUser, EventNotification, NotificationCategory } from '../../types';
 import { UPAZILAS } from '../../data/initialData';
+import { normalizeAdminUsername, getAdminProfile } from '../../services/adminProfileService';
 import {
   saveDestination,
   deleteDestination,
@@ -61,11 +69,18 @@ import {
   deleteSubAdmin,
   toggleSubAdminStatus,
 } from '../../services/adminAuthService';
-import { subscribeLiveUsers, AnalyticsStats } from '../../services/analyticsService';
+import { subscribeLiveVisitors, ActiveSessionData } from '../../services/analyticsService';
+import { AnalyticsDashboardView } from './AnalyticsDashboardView';
+import { TeamManagementView } from './TeamManagementView';
+import { AdminProfileView } from './AdminProfileView';
+import { AdminChatInboxView } from './AdminChatInboxView';
+import { CommunityModerationView } from './CommunityModerationView';
+import { getTeamMembers } from '../../services/teamService';
 
 interface AdminDashboardProps {
   destinations: Destination[];
   categories: Category[];
+  initialTab?: string;
   onRefreshData: () => Promise<void>;
   onPreviewDestination: (slug: string) => void;
 }
@@ -73,14 +88,69 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   destinations,
   categories,
+  initialTab,
   onRefreshData,
   onPreviewDestination,
 }) => {
-  const { user, adminUsername, adminName, adminRole, isSuperAdmin, isEditor } = useAuth();
+  const { user, adminUsername, adminName, adminRole, isSuperAdmin, isEditor, signOut } = useAuth();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   const [activeTab, setActiveTab] = useState<
-    'destinations' | 'notifications' | 'admins' | 'analytics' | 'security' | 'categories' | 'messages' | 'database'
-  >('destinations');
+    'destinations' | 'notifications' | 'analytics' | 'team' | 'profile' | 'admins' | 'security' | 'categories' | 'messages' | 'database' | 'chat' | 'moderation'
+  >((initialTab as any) || 'destinations');
+
+  const [teamMembersCount, setTeamMembersCount] = useState<number>(4);
+  const [adminProfileData, setAdminProfileData] = useState<{ fullName?: string; avatarUrl?: string } | null>(null);
+
+  useEffect(() => {
+    getTeamMembers()
+      .then((list) => setTeamMembersCount(list.length))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    getAdminProfile(adminUsername || 'sabbir')
+      .then((p) => setAdminProfileData({ fullName: p.fullName, avatarUrl: p.avatarUrl }))
+      .catch(() => {});
+
+    const handleProfileUpdate = (e: any) => {
+      if (e.detail) {
+        setAdminProfileData({ fullName: e.detail.fullName, avatarUrl: e.detail.avatarUrl });
+      }
+    };
+    window.addEventListener('sherpur_profile_updated', handleProfileUpdate);
+    return () => window.removeEventListener('sherpur_profile_updated', handleProfileUpdate);
+  }, [adminUsername]);
+
+  useEffect(() => {
+    if (
+      initialTab &&
+      [
+        'destinations',
+        'notifications',
+        'analytics',
+        'team',
+        'profile',
+        'admins',
+        'security',
+        'categories',
+        'messages',
+        'database',
+        'chat',
+        'moderation',
+      ].includes(initialTab)
+    ) {
+      setActiveTab(initialTab as any);
+    }
+  }, [initialTab]);
+
+  const handleTabClick = (tab: typeof activeTab) => {
+    setActiveTab(tab);
+    if (window.location.pathname !== `/admin/${tab}`) {
+      window.history.pushState(null, '', `/admin/${tab}`);
+    }
+  };
+
 
   // Event & Festival Notifications State
   const [eventNotifications, setEventNotifications] = useState<EventNotification[]>([]);
@@ -123,13 +193,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [createAdminSuccess, setCreateAdminSuccess] = useState<string | null>(null);
 
   // Analytics Real-Time state
-  const [analytics, setAnalytics] = useState<AnalyticsStats>({
-    liveUsersCount: 1,
-    activeSessions: [],
-    deviceCounts: { mobile: 0, desktop: 1 },
-    popularPaths: {},
-    totalViews: 158,
-  });
+  const [liveVisitorsCount, setLiveVisitorsCount] = useState<number>(1);
 
   // Password Change state
   const [oldPassword, setOldPassword] = useState('');
@@ -149,10 +213,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Seeding state
   const [isSeeding, setIsSeeding] = useState(false);
 
-  // Subscribe to real-time analytics
+  // Subscribe to real-time live visitors (5-min window)
   useEffect(() => {
-    const unsubscribe = subscribeLiveUsers((stats) => {
-      setAnalytics(stats);
+    const unsubscribe = subscribeLiveVisitors((count: number) => {
+      setLiveVisitorsCount(count);
     });
     return () => unsubscribe();
   }, []);
@@ -570,7 +634,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <div className="min-h-screen bg-gray-50/70 pb-16">
       {/* Toast Notification */}
       {toastMsg && (
         <div
@@ -589,213 +653,434 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* Editor Restriction Notice Banner */}
-      {isEditor && (
-        <div className="bg-amber-50 border border-amber-300 rounded-3xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-950 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center shrink-0">
-              <Shield className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="font-bold text-sm">
-                সহকারী অ্যাডমিন অ্যাক্সেস ({adminName || adminUsername})
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-6 space-y-6">
+        {/* Editor Restriction Notice Banner */}
+        {isEditor && (
+          <div className="bg-amber-50 border border-amber-300 rounded-3xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-950 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center shrink-0">
+                <Shield className="w-5 h-5" />
               </div>
-              <div className="text-xs text-amber-800 mt-0.5">
-                আপনার অনুমতি শুধুমাত্র <strong>নতুন দর্শনীয় স্থান যোগ করার</strong> জন্য নির্ধারিত। ডিলিট বা ক্যাটাগরি পরিবর্তনের ক্ষমতা নেই।
+              <div>
+                <div className="font-bold text-sm">
+                  সহকারী অ্যাডমিন অ্যাক্সেস ({adminName || adminUsername})
+                </div>
+                <div className="text-xs text-amber-800 mt-0.5">
+                  আপনার অনুমতি শুধুমাত্র <strong>নতুন দর্শনীয় স্থান যোগ করার</strong> জন্য নির্ধারিত। ডিলিট বা ক্যাটাগরি পরিবর্তনের ক্ষমতা নেই।
+                </div>
               </div>
             </div>
+            <button
+              onClick={handleOpenAddForm}
+              className="px-4 py-2 bg-[#143E27] hover:bg-[#0D2618] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>নতুন স্থান যোগ করুন</span>
+            </button>
           </div>
-          <button
-            onClick={handleOpenAddForm}
-            className="px-4 py-2 bg-[#143E27] hover:bg-[#0D2618] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>নতুন স্থান যোগ করুন</span>
-          </button>
-        </div>
-      )}
-
-      {/* Header bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-200 shadow-xs">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-[#143E27] text-xs font-bold mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{isSuperAdmin ? 'সুপার অ্যাডমিন নিয়ন্ত্রণ কক্ষ' : 'কন্টেন্ট ক্রিয়েটর ড্যাশবোর্ড'}</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#143E27]">
-            শেরপুর ভ্রমণ গাইড অ্যাডমিন প্যানেল
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            অ্যাকাউন্ট: <strong className="text-gray-800">{adminName || adminUsername || user?.email || 'sabbir'}</strong> &nbsp;•&nbsp; 
-            পদবী: <span className="font-semibold text-emerald-800">{isSuperAdmin ? 'প্রধান অ্যাডমিন (Super Admin)' : 'সহকারী অ্যাডমিন (Editor)'}</span>
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Live Visitor Pill */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-900 shadow-2xs">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
-            </span>
-            <span>{analytics.liveUsersCount} জন লাইভ ভিজিটর</span>
-          </div>
-
-          <button
-            onClick={() => onRefreshData().then(() => showToast('তথ্য রিফ্রেশ হয়েছে!'))}
-            className="p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition"
-            title="ডাটাবেজ রিফ্রেশ"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleOpenAddForm}
-            className="px-4 py-2.5 rounded-xl bg-[#143E27] hover:bg-[#0D2618] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-xs cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>নতুন স্থান যোগ করুন</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Real Metrics Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        {/* Live Users Counter */}
-        <div className="col-span-2 sm:col-span-1 bg-gradient-to-br from-[#143E27] to-[#0A2215] text-white p-4 sm:p-5 rounded-2xl shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-xs text-emerald-300 font-semibold">
-            <span>লাইভ ব্যবহারকারী</span>
-            <Activity className="w-4 h-4 text-emerald-400 animate-pulse" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-2">
-            <span>{analytics.liveUsersCount}</span>
-            <span className="text-xs font-normal text-emerald-200">জন এই মুহূর্তে</span>
-          </div>
-          <div className="text-[11px] text-emerald-300/80">রিয়েল-টাইম ট্র্যাকিং</div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
-          <div className="text-xs text-gray-500 font-semibold">মোট দর্শনীয় স্থান</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#143E27] mt-1">{totalDestinations}টি</div>
-          <div className="text-[11px] text-emerald-700 mt-1 font-medium">৫টি উপজেলায় বিস্তৃত</div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
-          <div className="text-xs text-gray-500 font-semibold">প্রকাশিত (পাবলিক)</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1">{publishedCount}টি</div>
-          <div className="text-[11px] text-gray-500 mt-1">ওয়েবসাইটে দৃশ্যমান</div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
-          <div className="text-xs text-gray-500 font-semibold">ড্রাফট (অপ্রকাশিত)</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1">{draftCount}টি</div>
-          <div className="text-[11px] text-gray-500 mt-1">পর্যালোচনাধীন রয়েছে</div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs col-span-2 sm:col-span-1">
-          <div className="text-xs text-gray-500 font-semibold">ক্যাটাগরি সমূহ</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-blue-600 mt-1">{totalCategories}টি</div>
-          <div className="text-[11px] text-gray-500 mt-1">থিম্যাটিক শ্রেণিবিভাগ</div>
-        </div>
-      </div>
-
-      {/* Tab Navigation - Scoped by Role */}
-      <div className="flex border-b border-gray-200 gap-1.5 sm:gap-2 overflow-x-auto pb-0.5">
-        <button
-          onClick={() => setActiveTab('destinations')}
-          className={`py-2.5 sm:py-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition shrink-0 cursor-pointer ${
-            activeTab === 'destinations'
-              ? 'border-[#143E27] text-[#143E27]'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          দর্শনীয় স্থানসমূহ ({destinations.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('notifications')}
-          className={`py-2.5 sm:py-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'notifications'
-              ? 'border-[#143E27] text-[#143E27]'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <Bell className="w-4 h-4 text-amber-600" />
-          <span>উৎসব ও নোটিফিকেশন ({eventNotifications.length})</span>
-        </button>
-
-        {isSuperAdmin && (
-          <>
-            <button
-              onClick={() => setActiveTab('admins')}
-              className={`py-3 px-4 font-bold text-sm border-b-2 transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'admins'
-                  ? 'border-[#143E27] text-[#143E27]'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              <UserPlus className="w-4 h-4 text-emerald-700" />
-              <span>সহকারী অ্যাডমিন ব্যবস্থাপনা</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`py-3 px-4 font-bold text-sm border-b-2 transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'analytics'
-                  ? 'border-[#143E27] text-[#143E27]'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              <Activity className="w-4 h-4 text-emerald-600" />
-              <span>অ্যানালিটিক্স ও লাইভ ইউজার ({analytics.liveUsersCount})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('security')}
-              className={`py-3 px-4 font-bold text-sm border-b-2 transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'security'
-                  ? 'border-[#143E27] text-[#143E27]'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              <KeyRound className="w-4 h-4 text-amber-600" />
-              <span>পাসওয়ার্ড পরিবর্তন</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('categories')}
-              className={`py-3 px-4 font-bold text-sm border-b-2 transition shrink-0 cursor-pointer ${
-                activeTab === 'categories'
-                  ? 'border-[#143E27] text-[#143E27]'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              ক্যাটাগরি ব্যবস্থাপনা ({categories.length})
-            </button>
-
-            <button
-              onClick={() => setActiveTab('messages')}
-              className={`py-3 px-4 font-bold text-sm border-b-2 transition shrink-0 cursor-pointer ${
-                activeTab === 'messages'
-                  ? 'border-[#143E27] text-[#143E27]'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              অনুসন্ধান ও বার্তা ({messages.length})
-            </button>
-
-            <button
-              onClick={() => setActiveTab('database')}
-              className={`py-3 px-4 font-bold text-sm border-b-2 transition shrink-0 cursor-pointer ${
-                activeTab === 'database'
-                  ? 'border-[#143E27] text-[#143E27]'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              ডাটাবেজ ও সিডিং
-            </button>
-          </>
         )}
-      </div>
+
+        {/* Mobile Top Header with Menu Toggle */}
+        <div className="lg:hidden flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-200 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <img
+              src={adminProfileData?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
+              alt=""
+              className="w-10 h-10 rounded-xl object-cover border border-emerald-600 shadow-2xs"
+            />
+            <div>
+              <div className="text-xs font-extrabold text-gray-900 truncate">
+                {adminProfileData?.fullName || adminName || 'মো. সাব্বির হোসেন'}
+              </div>
+              <div className="text-[10px] text-emerald-800 font-semibold">
+                {isSuperAdmin ? 'প্রধান অ্যাডমিন (Super Admin)' : 'সহকারী এডিটর'}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+            className="p-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+          >
+            <Menu className="w-4 h-4" />
+            <span>সাইডবার মেনু</span>
+          </button>
+        </div>
+
+        {/* SaaS Dashboard 2-Column: Modern Sidebar + Main Area */}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* Modern Sidebar (সাইডবার) */}
+          <aside
+            className={`w-full lg:w-72 lg:shrink-0 bg-white rounded-3xl border border-gray-200/90 shadow-sm p-4 sm:p-5 lg:sticky lg:top-24 space-y-5 ${
+              mobileSidebarOpen ? 'block' : 'hidden lg:block'
+            }`}
+          >
+            {/* Admin Profile & Avatar Card */}
+            <div
+              onClick={() => {
+                handleTabClick('profile');
+                setMobileSidebarOpen(false);
+              }}
+              className="flex items-center gap-3.5 p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200 hover:bg-emerald-100/70 transition cursor-pointer group"
+              title="প্রোফাইল সম্পাদন করতে ক্লিক করুন"
+            >
+              <div className="relative shrink-0">
+                <img
+                  src={adminProfileData?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
+                  alt=""
+                  className="w-12 h-12 rounded-2xl object-cover border-2 border-emerald-600 shadow-2xs group-hover:scale-105 transition-transform"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-2xs" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-extrabold text-gray-900 group-hover:text-[#143E27] truncate">
+                  {adminProfileData?.fullName || adminName || 'মো. সাব্বির হোসেন'}
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-950">
+                    {isSuperAdmin ? 'Super Admin' : 'Editor'}
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-sans truncate">
+                    @{normalizeAdminUsername(adminUsername)}
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-emerald-700 opacity-60 group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </div>
+
+            {/* Navigation Group 1: মূল ব্যবস্থাপনা */}
+            <div className="space-y-1">
+              <div className="px-3 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                মূল ব্যবস্থাপনা
+              </div>
+
+              <button
+                onClick={() => {
+                  handleTabClick('destinations');
+                  setMobileSidebarOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                  activeTab === 'destinations'
+                    ? 'bg-[#143E27] text-white shadow-xs'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <MapPin className={`w-4 h-4 ${activeTab === 'destinations' ? 'text-emerald-300' : 'text-emerald-700'}`} />
+                  <span>দর্শনীয় স্থানসমূহ</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                  activeTab === 'destinations' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {destinations.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  handleTabClick('notifications');
+                  setMobileSidebarOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                  activeTab === 'notifications'
+                    ? 'bg-[#143E27] text-white shadow-xs'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Bell className={`w-4 h-4 ${activeTab === 'notifications' ? 'text-amber-300' : 'text-amber-600'}`} />
+                  <span>উৎসব ও নোটিশ</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                  activeTab === 'notifications' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900'
+                }`}>
+                  {eventNotifications.length}
+                </span>
+              </button>
+            </div>
+
+            {/* Navigation Group 2: ইন্টেলিজেন্স ও টিম */}
+            <div className="space-y-1">
+              <div className="px-3 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                ইন্টেলিজেন্স ও টিম
+              </div>
+
+              <button
+                onClick={() => {
+                  handleTabClick('analytics');
+                  setMobileSidebarOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                  activeTab === 'analytics'
+                    ? 'bg-[#143E27] text-white shadow-xs'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <BarChart3 className={`w-4 h-4 ${activeTab === 'analytics' ? 'text-emerald-300' : 'text-emerald-600'}`} />
+                  <span>অ্যানালিটিক্স ড্যাশবোর্ড</span>
+                </div>
+                <span className="flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
+                  Live
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  handleTabClick('team');
+                  setMobileSidebarOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                  activeTab === 'team'
+                    ? 'bg-[#143E27] text-white shadow-xs'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Users className={`w-4 h-4 ${activeTab === 'team' ? 'text-purple-300' : 'text-purple-600'}`} />
+                  <span>টিম ও সম্পাদক প্যানেল</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                  activeTab === 'team' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {teamMembersCount}
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  handleTabClick('profile');
+                  setMobileSidebarOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                  activeTab === 'profile'
+                    ? 'bg-[#143E27] text-white shadow-xs'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <UserCircle className={`w-4 h-4 ${activeTab === 'profile' ? 'text-emerald-300' : 'text-emerald-700'}`} />
+                  <span>অ্যাডমিন প্রোফাইল</span>
+                </div>
+              </button>
+            </div>
+
+            {/* Navigation Group 2.5: কমিউনিটি ও লাইভ সেবা */}
+            <div className="space-y-1">
+              <div className="px-3 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                কমিউনিটি ও গ্রাহক সেবা
+              </div>
+
+              <button
+                onClick={() => {
+                  handleTabClick('chat');
+                  setMobileSidebarOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                  activeTab === 'chat'
+                    ? 'bg-[#143E27] text-white shadow-xs'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <MessageCircle className={`w-4 h-4 ${activeTab === 'chat' ? 'text-emerald-300' : 'text-emerald-700'}`} />
+                  <span>লাইভ চ্যাট ইনবক্স</span>
+                </div>
+                <span className="text-[10px] bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded-full">
+                  Live
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  handleTabClick('moderation');
+                  setMobileSidebarOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                  activeTab === 'moderation'
+                    ? 'bg-[#143E27] text-white shadow-xs'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Flag className={`w-4 h-4 ${activeTab === 'moderation' ? 'text-rose-300' : 'text-rose-600'}`} />
+                  <span>কমিউনিটি ও রিপোর্ট</span>
+                </div>
+              </button>
+            </div>
+
+            {/* Navigation Group 3: সিস্টেম ও ডেটাবেজ (Superadmin) */}
+            {isSuperAdmin && (
+              <div className="space-y-1">
+                <div className="px-3 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  সিস্টেম ও কনফিগারেশন
+                </div>
+
+                <button
+                  onClick={() => {
+                    handleTabClick('categories');
+                    setMobileSidebarOpen(false);
+                  }}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                    activeTab === 'categories'
+                      ? 'bg-[#143E27] text-white shadow-xs'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Layers className={`w-4 h-4 ${activeTab === 'categories' ? 'text-blue-300' : 'text-blue-600'}`} />
+                    <span>ক্যাটাগরি ব্যবস্থাপনা</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                    activeTab === 'categories' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {categories.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleTabClick('messages');
+                    setMobileSidebarOpen(false);
+                  }}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                    activeTab === 'messages'
+                      ? 'bg-[#143E27] text-white shadow-xs'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Mail className={`w-4 h-4 ${activeTab === 'messages' ? 'text-amber-300' : 'text-amber-600'}`} />
+                    <span>অনুসন্ধান ও বার্তা</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                    activeTab === 'messages' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {messages.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleTabClick('database');
+                    setMobileSidebarOpen(false);
+                  }}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-between transition cursor-pointer ${
+                    activeTab === 'database'
+                      ? 'bg-[#143E27] text-white shadow-xs'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Database className={`w-4 h-4 ${activeTab === 'database' ? 'text-indigo-300' : 'text-indigo-600'}`} />
+                    <span>ডাটাবেজ ও সিডিং</span>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* Sidebar Footer: Live Visitor & Public Site Link */}
+            <div className="pt-4 border-t border-gray-100 space-y-2.5">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 text-emerald-900 text-xs font-bold border border-emerald-200">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+                  </span>
+                  <span>লাইভ ভিজিটর</span>
+                </div>
+                <span className="text-sm font-black">{liveVisitorsCount} জন</span>
+              </div>
+
+              <a
+                href="/"
+                className="w-full py-2 px-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold flex items-center justify-center gap-2 transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-gray-500" />
+                <span>ওয়েবসাইটে ফিরে যান</span>
+              </a>
+
+              <button
+                onClick={() => signOut()}
+                className="w-full py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5 text-red-600" />
+                <span>লগআউট</span>
+              </button>
+            </div>
+          </aside>
+
+          {/* Main Content Area */}
+          <main className="flex-1 min-w-0 w-full space-y-6">
+            {/* Header Action Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-gray-200 shadow-xs">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-[#143E27] text-xs font-bold mb-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>{isSuperAdmin ? 'সুপার অ্যাডমিন নিয়ন্ত্রণ কক্ষ' : 'কন্টেন্ট ক্রিয়েটর ড্যাশবোর্ড'}</span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-black text-[#143E27]">
+                  {activeTab === 'destinations' && 'দর্শনীয় স্থানসমূহ ব্যবস্থাপনা'}
+                  {activeTab === 'analytics' && 'অ্যানালিটিক্স ও বিজনেস ইন্টেলিজেন্স'}
+                  {activeTab === 'team' && 'টিম মেম্বার ও সম্পাদক প্যানেল'}
+                  {activeTab === 'profile' && 'অ্যাডমিন প্রোফাইল ও নিরাপত্তা'}
+                  {activeTab === 'notifications' && 'উৎসব ও নোটিফিকেশন সেন্টার'}
+                  {activeTab === 'categories' && 'ক্যাটাগরি সমূহ ব্যবস্থাপনা'}
+                  {activeTab === 'messages' && 'ব্যবহারকারীদের অনুসন্ধান ও বার্তা'}
+                  {activeTab === 'database' && 'ক্লাউড ডাটাবেজ ব্যাকআপ ও সিডিং'}
+                  {activeTab === 'chat' && 'লাইভ চ্যাট ইনবক্স ও গ্রাহক সহায়তা'}
+                  {activeTab === 'moderation' && 'কমিউনিটি ও কনটেন্ট মডারেশন'}
+                </h1>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  অ্যাডমিন: <strong className="text-gray-800">{adminProfileData?.fullName || adminName || 'মো. সাব্বির হোসেন'}</strong> &nbsp;•&nbsp; 
+                  পদবী: <span className="font-semibold text-emerald-800">{isSuperAdmin ? 'প্রধান অ্যাডমিন (Super Admin)' : 'সহকারী এডিটর'}</span>
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => onRefreshData().then(() => showToast('তথ্য রিফ্রেশ হয়েছে!'))}
+                  className="p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition cursor-pointer"
+                  title="ডাটাবেজ রিফ্রেশ"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleOpenAddForm}
+                  className="px-4 py-2.5 rounded-xl bg-[#143E27] hover:bg-[#0D2618] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>নতুন স্থান যোগ করুন</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar in Content Area */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
+                <div className="text-[11px] text-gray-500 font-semibold">মোট দর্শনীয় স্থান</div>
+                <div className="text-2xl font-black text-[#143E27] mt-0.5">{totalDestinations}টি</div>
+                <div className="text-[10px] text-emerald-700 font-medium">৫টি উপজেলায় বিস্তৃত</div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
+                <div className="text-[11px] text-gray-500 font-semibold">প্রকাশিত স্থান</div>
+                <div className="text-2xl font-black text-emerald-600 mt-0.5">{publishedCount}টি</div>
+                <div className="text-[10px] text-gray-400 font-medium">পাবলিক ভিউতে সচল</div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
+                <div className="text-[11px] text-gray-500 font-semibold">ড্রাফট বা পর্যালোচনায়</div>
+                <div className="text-2xl font-black text-amber-600 mt-0.5">{draftCount}টি</div>
+                <div className="text-[10px] text-gray-400 font-medium">অপ্রকাশিত অবস্থায় আছে</div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
+                <div className="text-[11px] text-gray-500 font-semibold">টিম মেম্বার</div>
+                <div className="text-2xl font-black text-purple-600 mt-0.5">{teamMembersCount} জন</div>
+                <div className="text-[10px] text-gray-400 font-medium">সম্পাদকীয় বোর্ডে যুক্ত</div>
+              </div>
+            </div>
 
       {/* Tab 1: Destinations Table */}
       {activeTab === 'destinations' && (
@@ -1354,117 +1639,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* Tab 3: Analytics & Live User Count */}
-      {activeTab === 'analytics' && isSuperAdmin && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
-                  লাইভ পরিদর্শক
-                </span>
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-600"></span>
-                </span>
-              </div>
-              <div className="text-4xl font-extrabold text-[#143E27]">
-                {analytics.liveUsersCount} <span className="text-lg font-medium text-gray-500">জন সক্রিয়</span>
-              </div>
-              <p className="text-xs text-gray-500">
-                গত ৯০ সেকেন্ডে সাইটে ব্রাউজ করছেন এমন সক্রিয় ভিজিটরদের রিয়েল-টাইম গণনা।
-              </p>
-            </div>
+      {/* MODULE 1: Professional Analytics Dashboard */}
+      {activeTab === 'analytics' && (
+        <AnalyticsDashboardView
+          destinations={destinations}
+          totalTeamMembersCount={teamMembersCount}
+          onPreviewDestination={onPreviewDestination}
+        />
+      )}
 
-            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-xs space-y-3">
-              <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">
-                সর্বমোট পৃষ্ঠা পরিদর্শন
-              </span>
-              <div className="text-4xl font-extrabold text-blue-900">
-                {analytics.totalViews} <span className="text-lg font-medium text-gray-500">বার</span>
-              </div>
-              <p className="text-xs text-gray-500">
-                ওয়েবসাইটের বিভিন্ন দর্শনীয় স্থান ও পৃষ্ঠা পরিদর্শনের মোট ট্র্যাকিং।
-              </p>
-            </div>
+      {/* MODULE 2: Team Management Page */}
+      {activeTab === 'team' && (
+        <TeamManagementView
+          currentUsername={adminUsername}
+          isSuperAdmin={isSuperAdmin}
+          onRefreshData={async () => {
+            await onRefreshData();
+            const list = await getTeamMembers();
+            setTeamMembersCount(list.length);
+          }}
+        />
+      )}
 
-            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-xs space-y-3">
-              <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                ডিভাইস ভিত্তিক বিন্যাস
-              </span>
-              <div className="flex items-center gap-6 pt-1">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-5 h-5 text-emerald-700" />
-                  <div>
-                    <div className="text-lg font-bold text-gray-900">{analytics.deviceCounts.mobile}</div>
-                    <div className="text-[11px] text-gray-500">মোবাইল ব্যবহারকারী</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Monitor className="w-5 h-5 text-blue-700" />
-                  <div>
-                    <div className="text-lg font-bold text-gray-900">{analytics.deviceCounts.desktop}</div>
-                    <div className="text-[11px] text-gray-500">ডেস্কটপ ব্যবহারকারী</div>
-                  </div>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 pt-1">
-                মোবাইল-বান্ধব ও অপ্টিমাইজড ভিউ কার্যকর।
-              </p>
-            </div>
-          </div>
+      {/* MODULE 3: Administrator Profile Page */}
+      {activeTab === 'profile' && (
+        <AdminProfileView
+          currentUsername={adminUsername}
+          adminName={adminName}
+          adminRole={adminRole}
+          isSuperAdmin={isSuperAdmin}
+          totalDestinationsCount={destinations.length}
+        />
+      )}
 
-          <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xs space-y-4">
-            <h3 className="text-base font-bold text-[#143E27] flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-700" />
-              <span>বর্তমান সক্রিয় সেশন ও ভিজিটর পাথসমূহ ({analytics.activeSessions.length}টি)</span>
-            </h3>
+      {/* MODULE 3.5: Live Chat Inbox */}
+      {activeTab === 'chat' && (
+        <AdminChatInboxView />
+      )}
 
-            <div className="overflow-x-auto">
-              <table className="min-w-[500px] w-full text-left text-xs">
-                <thead className="bg-gray-50 text-gray-600 uppercase text-[11px] font-bold border-b border-gray-200">
-                  <tr>
-                    <th className="py-2.5 px-3">সেশন আইডি</th>
-                    <th className="py-2.5 px-3">বর্তমান পৃষ্ঠা (Current Path)</th>
-                    <th className="py-2.5 px-3">ডিভাইস</th>
-                    <th className="py-2.5 px-3">সর্বশেষ সংকেত (Heartbeat)</th>
-                    <th className="py-2.5 px-3 text-right">স্ট্যাটাস</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 font-mono">
-                  {analytics.activeSessions.map((sess, idx) => (
-                    <tr key={sess.sessionId || idx} className="hover:bg-gray-50/80">
-                      <td className="py-2.5 px-3 text-gray-600 truncate max-w-[150px]">
-                        {sess.sessionId}
-                      </td>
-                      <td className="py-2.5 px-3 font-semibold text-[#143E27]">
-                        {sess.currentPath || '#home'}
-                      </td>
-                      <td className="py-2.5 px-3 text-gray-700 font-sans">
-                        {sess.device === 'Mobile' ? '📱 Mobile' : '💻 Desktop'}
-                      </td>
-                      <td className="py-2.5 px-3 text-gray-500 font-sans">
-                        {new Date(sess.lastActive).toLocaleTimeString('bn-BD')}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-sans">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                          ● লাইভ
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {analytics.activeSessions.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-6 text-center text-gray-400 font-sans">
-                        বর্তমানে আপনি ছাড়া আর কোনো বাহ্যিক পরিদর্শক নেই।
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      {/* MODULE 3.6: Community and Report Moderation */}
+      {activeTab === 'moderation' && (
+        <CommunityModerationView />
       )}
 
       {/* Tab 4: Security & Password Change (Super Admin Only) */}
@@ -1715,6 +1930,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
         </div>
       )}
+
+          </main>
+        </div>
+      </div>
 
       {/* Add / Edit Destination Modal */}
       {isFormOpen && editingDestination && (

@@ -9,7 +9,7 @@ service cloud.firestore {
 
     // Hardened Global Helpers
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-\\.\\@]+$');
     }
 
     function incoming() {
@@ -131,6 +131,22 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow read: if true;
       allow create, update, delete: if isValidId(notificationId);
+    }
+
+    // Analytics Events collection (client event logging and admin reading)
+    match /analyticsEvents/{eventId} {
+      allow create: if isValidId(eventId);
+      allow read, delete: if true;
+    }
+
+    // Team Members collection
+    match /teamMembers/{memberId} {
+      allow read, write: if true;
+    }
+
+    // Admin Profiles collection
+    match /adminProfiles/{profileId} {
+      allow read, write: if true;
     }
 
     // Test collection for boot connectivity check

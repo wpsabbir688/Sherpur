@@ -87,10 +87,34 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               </li>
               <li>
                 <button
+                  onClick={() => onNavigate('community')}
+                  className="hover:text-amber-300 transition-colors font-semibold text-emerald-300"
+                >
+                  ট্রাভেলার্স কমিউনিটি ও গল্প
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => onNavigate('trips')}
+                  className="hover:text-amber-300 transition-colors"
+                >
+                  ট্রিপ প্ল্যানার ও বাজেট ক্যালকুলেটর
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => onNavigate('guides')}
                   className="hover:text-amber-300 transition-colors"
                 >
                   ভ্রমণ পরিকল্পনা ও নিরাপত্তা টিপস
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => onNavigate('team')}
+                  className="hover:text-amber-300 transition-colors font-semibold text-emerald-300"
+                >
+                  আমাদের টিম ও গবেষক প্যানেল
                 </button>
               </li>
               <li>

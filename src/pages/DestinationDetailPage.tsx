@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MapPin,
   Clock,
@@ -17,9 +17,13 @@ import {
   Compass,
   AlertTriangle,
   Lightbulb,
+  CheckCircle2,
+  Users,
 } from 'lucide-react';
 import { Destination, Category } from '../types';
 import { UPAZILAS } from '../data/initialData';
+import { recordAnalyticsEvent } from '../services/analyticsService';
+import { getDestinationAuthor } from '../utils/authorHelper';
 
 interface DestinationDetailPageProps {
   destination: Destination;
@@ -27,6 +31,7 @@ interface DestinationDetailPageProps {
   categories: Category[];
   onSelectDestination: (slug: string) => void;
   onBack: () => void;
+  onNavigate?: (view: string, param?: string) => void;
 }
 
 export const DestinationDetailPage: React.FC<DestinationDetailPageProps> = ({
@@ -35,11 +40,24 @@ export const DestinationDetailPage: React.FC<DestinationDetailPageProps> = ({
   categories,
   onSelectDestination,
   onBack,
+  onNavigate,
 }) => {
   const [copied, setCopied] = useState(false);
   const [selectedGalleryImg, setSelectedGalleryImg] = useState<string | null>(null);
 
+  // Track destination view
+  useEffect(() => {
+    if (destination?.id) {
+      recordAnalyticsEvent('destination_view', {
+        destinationId: destination.id,
+        pagePath: `#places/${destination.slug}`,
+        metadata: { titleBn: destination.titleBn, upazila: destination.upazilaId },
+      });
+    }
+  }, [destination?.id, destination?.slug]);
+
   const upazila = UPAZILAS.find((u) => u.id === destination.upazilaId);
+  const author = getDestinationAuthor(destination);
 
   const categoryNames = (destination.categoryIds || [])
     .map((catId) => categories.find((c) => c.id === catId)?.nameBn)
@@ -53,6 +71,11 @@ export const DestinationDetailPage: React.FC<DestinationDetailPageProps> = ({
   const handleShare = (platform: 'copy' | 'whatsapp' | 'facebook') => {
     const url = window.location.href;
     const title = `${destination.titleBn} - শেরপুর ভ্রমণ গাইড`;
+
+    recordAnalyticsEvent('share_click', {
+      destinationId: destination.id,
+      metadata: { platform, slug: destination.slug },
+    });
 
     if (platform === 'copy') {
       navigator.clipboard.writeText(url);
@@ -126,6 +149,20 @@ export const DestinationDetailPage: React.FC<DestinationDetailPageProps> = ({
               <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
               <span>{destination.locationName}</span>
             </p>
+
+            {/* Author / Publisher Byline */}
+            <div className="flex items-center gap-2.5 mt-3 pt-3 border-t border-gray-100">
+              <img
+                src={author.avatarUrl}
+                alt={author.name}
+                className="w-8 h-8 rounded-full object-cover border border-emerald-600 shadow-2xs shrink-0"
+              />
+              <div className="text-xs">
+                <span className="text-gray-500">সংকলন ও সম্পাদনা: </span>
+                <strong className="text-gray-900 font-bold">{author.name}</strong>
+                <span className="text-emerald-700 font-medium ml-1">({author.role})</span>
+              </div>
+            </div>
           </div>
 
           {/* Share buttons */}
@@ -216,6 +253,12 @@ export const DestinationDetailPage: React.FC<DestinationDetailPageProps> = ({
               href={destination.googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() =>
+                recordAnalyticsEvent('map_link_click', {
+                  destinationId: destination.id,
+                  metadata: { titleBn: destination.titleBn },
+                })
+              }
               className="text-sm font-bold text-[#1E5638] hover:underline flex items-center gap-1"
             >
               <span>গুগল ম্যাপসে দেখুন</span>
@@ -358,6 +401,52 @@ export const DestinationDetailPage: React.FC<DestinationDetailPageProps> = ({
                 <span className="text-gray-600">{destination.sourceUrls.join(', ')}</span>
               </div>
             )}
+          </div>
+
+          {/* Dedicated Author & Publisher Profile Card */}
+          <div className="bg-white rounded-3xl border border-gray-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                এই গাইডের গবেষক ও কিউরেটর
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#143E27] text-[10px] font-bold">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> ভেরিফাইড
+              </span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <img
+                src={author.avatarUrl}
+                alt={author.name}
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-600 shadow-2xs shrink-0"
+              />
+              <div className="space-y-0.5 min-w-0">
+                <h4 className="text-base font-extrabold text-gray-900 truncate">
+                  {author.name}
+                </h4>
+                <p className="text-xs font-semibold text-emerald-800 line-clamp-1">
+                  {author.role}
+                </p>
+                <div className="text-[11px] text-gray-400 font-sans">
+                  @{author.username}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+              {author.bio}
+            </p>
+
+            <button
+              onClick={() => {
+                if (onNavigate) onNavigate('team');
+                else window.history.pushState(null, '', '/team');
+              }}
+              className="w-full py-2 bg-emerald-50 hover:bg-[#143E27] text-emerald-900 hover:text-white rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-emerald-200 hover:border-transparent"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>আমাদের টিম ও গবেষক প্যানেল দেখুন</span>
+            </button>
           </div>
 
           {/* Nearby places in this upazila */}

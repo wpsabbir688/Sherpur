@@ -14,10 +14,15 @@ import {
   Camera,
   ChevronRight,
   Info,
+  Users,
+  Heart,
+  MessageCircle,
 } from 'lucide-react';
 import { Destination, Category } from '../types';
 import { UPAZILAS } from '../data/initialData';
 import { DestinationCard } from '../components/destinations/DestinationCard';
+import { INITIAL_COMMUNITY_POSTS } from '../services/communityService';
+import { handleImageError } from '../utils/imageFallback';
 
 interface HomePageProps {
   destinations: Destination[];
@@ -68,8 +73,9 @@ export const HomePage: React.FC<HomePageProps> = ({
         {/* Background photo with subtle tint & vignette */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1920&q=85"
+            src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1920&q=85"
             alt="শেরপুরের সবুজ গারো পাহাড় ও বনভূমি"
+            onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=1920&q=85')}
             className="w-full h-full object-cover opacity-35 scale-105 animate-in fade-in duration-700"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-[#0B2115]/80 via-[#0B2115]/70 to-[#FBFBFA]" />
@@ -117,17 +123,21 @@ export const HomePage: React.FC<HomePageProps> = ({
           <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 pt-1">
             <button
               onClick={() => onNavigate('places')}
-              className="w-full xs:w-auto px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-600 text-white font-medium text-xs sm:text-sm transition backdrop-blur-md flex items-center justify-center gap-2"
+              className="w-full xs:w-auto px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-600 text-white font-medium text-xs sm:text-sm transition backdrop-blur-md flex items-center justify-center gap-2 cursor-pointer"
             >
               <Compass className="w-4 h-4" />
               <span>পর্যটন স্থান খুঁজুন</span>
             </button>
-            <a
-              href="#featured-destinations"
-              className="w-full xs:w-auto px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-xs sm:text-sm transition backdrop-blur-md border border-white/20 flex items-center justify-center"
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('featured-destinations');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full xs:w-auto px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-xs sm:text-sm transition backdrop-blur-md border border-white/20 flex items-center justify-center cursor-pointer"
             >
               জনপ্রিয় জায়গাগুলো দেখুন
-            </a>
+            </button>
           </div>
 
           {/* Real counts only (No fake numbers) */}
@@ -352,8 +362,9 @@ export const HomePage: React.FC<HomePageProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl overflow-hidden h-44 shadow-lg border border-white/10">
                 <img
-                  src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=600&q=80"
+                  src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80"
                   alt="শেরপুরের শালবন ট্রেইল"
+                  onError={(e) => handleImageError(e)}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -361,11 +372,122 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <img
                   src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80"
                   alt="শেরপুর পাহাড় ও মেঘালয় ভিউ"
+                  onError={(e) => handleImageError(e)}
                   className="w-full h-full object-cover"
                 />
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Trip Planner Discovery CTA (Step 6) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="bg-gradient-to-r from-[#143E27] via-[#1E5638] to-[#0D2618] rounded-3xl p-6 sm:p-10 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 max-w-xl">
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-400 text-emerald-950 inline-flex items-center gap-1.5 shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-950" />
+              <span>নতুন ফিচার</span>
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              শেরপুর ট্রিপ প্ল্যানার ও বাজেট ক্যালকুলেটর
+            </h3>
+            <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
+              ১ ও ২ দিনের সম্পূর্ণ ট্যুর রুট, যাতায়াত পরামর্শ, আকর্ষণীয় স্থানসমূহ এবং আনুমানিক খরচের হিসাব এক পলকে জেনে নিন।
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto shrink-0">
+            <button
+              onClick={() => onNavigate('trips')}
+              className="px-6 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-emerald-950 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+            >
+              <Compass className="w-4 h-4 text-emerald-950" />
+              <span>ভ্রমণ পরিকল্পনা তৈরি করুন</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Community Travel Stories & Photos Preview (Step 3 & 7) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" /> ট্রাভেলার্স কমিউনিটি
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#143E27] mt-1">
+              ভ্রমণকারীদের অভিজ্ঞতা ও তাজা গল্প
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              শেরপুরের বাস্তব ভ্রমণ কাহিনী, দর্শনীয় স্থানের ছবি ও পর্যটকদের প্রতিক্রিয়া
+            </p>
+          </div>
+
+          <button
+            onClick={() => onNavigate('community')}
+            className="self-start sm:self-auto px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#143E27] font-bold text-xs transition border border-emerald-200 flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>সকল গল্প দেখুন</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {INITIAL_COMMUNITY_POSTS.slice(0, 3).map((post) => (
+            <div
+              key={post.id}
+              onClick={() => onNavigate('community')}
+              className="bg-white rounded-3xl border border-gray-200/90 overflow-hidden shadow-2xs hover:shadow-md transition cursor-pointer group flex flex-col justify-between"
+            >
+              <div>
+                <div className="relative h-48 bg-gray-100 overflow-hidden">
+                  <img
+                    src={post.photos[0]}
+                    alt={post.caption}
+                    onError={(e) => handleImageError(e)}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  {post.destinationTitle && (
+                    <span className="absolute bottom-2.5 left-2.5 text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-black/60 text-white backdrop-blur-md flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-emerald-300" />
+                      {post.destinationTitle}
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-4 sm:p-5 space-y-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <img
+                      src={post.authorAvatar}
+                      alt={post.authorName}
+                      onError={(e) => handleImageError(e)}
+                      className="w-6 h-6 rounded-full object-cover border border-emerald-600/30"
+                    />
+                    <span className="font-bold text-gray-800">{post.authorName}</span>
+                  </div>
+                  <h4 className="font-bold text-sm text-gray-900 group-hover:text-[#143E27] line-clamp-2 leading-snug">
+                    {post.caption}
+                  </h4>
+                  {post.travelStory && (
+                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                      {post.travelStory}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 pt-0 border-t border-gray-100 mt-2 flex items-center justify-between text-xs text-gray-500">
+                <span className="flex items-center gap-1 text-rose-600 font-semibold">
+                  <Heart className="w-3.5 h-3.5 fill-rose-600" /> {post.likesCount} লাইক
+                </span>
+                <span className="flex items-center gap-1 text-emerald-800 font-semibold">
+                  <MessageCircle className="w-3.5 h-3.5" /> {post.commentsCount} মন্তব্য
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -384,48 +506,91 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-gray-100">
+          <div
+            onClick={() => onNavigate('places', 'madhutila-eco-park')}
+            className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-gray-100 cursor-pointer shadow-xs hover:shadow-md transition"
+            title="মধুটিলা ইকোপার্ক সম্পর্কে বিস্তারিত দেখুন"
+          >
             <img
-              src="https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=600&q=80"
-              alt="মধুটিলা শালবন"
+              src="https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=800&q=80"
+              alt="মধুটিলা বন ও লেক"
               loading="lazy"
+              onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80')}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-3">
-              <span className="text-white text-xs font-medium">মধুটিলা বন ও লেক</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-3 sm:p-3.5">
+              <div>
+                <span className="text-white text-xs sm:text-sm font-bold block">মধুটিলা বন ও লেক</span>
+                <span className="text-emerald-300 text-[10px] font-medium flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-2.5 h-2.5" /> নালিতাবাড়ী
+                </span>
+              </div>
             </div>
           </div>
-          <div className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-gray-100">
+
+          <div
+            onClick={() => onNavigate('places', 'ghajni-abakash-center')}
+            className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-gray-100 cursor-pointer shadow-xs hover:shadow-md transition"
+            title="গজনী অবকাশ কেন্দ্র সম্পর্কে বিস্তারিত দেখুন"
+          >
             <img
-              src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
+              src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80"
               alt="গজনী অবকাশ কেন্দ্র পাহাড়"
               loading="lazy"
+              onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80')}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-3">
-              <span className="text-white text-xs font-medium">গজনীর গারো পাহাড় ভিউ</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-3 sm:p-3.5">
+              <div>
+                <span className="text-white text-xs sm:text-sm font-bold block">গজনীর গারো পাহাড় ভিউ</span>
+                <span className="text-emerald-300 text-[10px] font-medium flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-2.5 h-2.5" /> ঝিনাইগাতী
+                </span>
+              </div>
             </div>
           </div>
-          <div className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-gray-100">
+
+          <div
+            onClick={() => onNavigate('places', 'rajar-pahar-sreebardi')}
+            className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-gray-100 cursor-pointer shadow-xs hover:shadow-md transition"
+            title="রাজার পাহাড় সম্পর্কে বিস্তারিত দেখুন"
+          >
             <img
-              src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80"
+              src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80"
               alt="রাজার পাহাড় শ্রীবরদী"
               loading="lazy"
+              onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80')}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-3">
-              <span className="text-white text-xs font-medium">রাজার পাহাড়ের উঁচু টিলা</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-3 sm:p-3.5">
+              <div>
+                <span className="text-white text-xs sm:text-sm font-bold block">রাজার পাহাড়ের উঁচু টিলা</span>
+                <span className="text-emerald-300 text-[10px] font-medium flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-2.5 h-2.5" /> শ্রীবরদী
+                </span>
+              </div>
             </div>
           </div>
-          <div className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-gray-100">
+
+          <div
+            onClick={() => onNavigate('categories', 'cultural-religious')}
+            className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-gray-100 cursor-pointer shadow-xs hover:shadow-md transition"
+            title="ঐতিহাসিক ও সাংস্কৃতিক স্থানসমূহ দেখুন"
+          >
             <img
-              src="https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=600&q=80"
+              src="https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=800&q=80"
               alt="ঐতিহাসিক স্থাপত্য"
               loading="lazy"
+              onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=800&q=80')}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-3">
-              <span className="text-white text-xs font-medium">ঐতিহাসিক স্থাপত্য</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-3 sm:p-3.5">
+              <div>
+                <span className="text-white text-xs sm:text-sm font-bold block">ঐতিহাসিক স্থাপত্য</span>
+                <span className="text-emerald-300 text-[10px] font-medium flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-2.5 h-2.5" /> শেরপুর জেলা
+                </span>
+              </div>
             </div>
           </div>
         </div>

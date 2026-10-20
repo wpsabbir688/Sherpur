@@ -8,10 +8,16 @@ import { DestinationDetailPage } from './pages/DestinationDetailPage';
 import { UpazilasPage } from './pages/UpazilasPage';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { GuidesPage } from './pages/GuidesPage';
+import { CommunityPage } from './pages/CommunityPage';
+import { TripPlannerPage } from './pages/TripPlannerPage';
+import { UserProfilePage } from './pages/UserProfilePage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
+import { PublicTeamPage } from './pages/PublicTeamPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminLoginModal } from './pages/admin/AdminLoginModal';
+import { UserAuthModal } from './components/common/UserAuthModal';
+import { FloatingChatWidget } from './components/common/FloatingChatWidget';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { Destination, Category, EventNotification } from './types';
 import { getDestinations } from './services/destinationService';
@@ -39,8 +45,9 @@ function AppContent() {
   const [viewParam, setViewParam] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Modal
+  // Modals
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
+  const [isUserAuthModalOpen, setIsUserAuthModalOpen] = useState(false);
 
   // Load festival & event notifications
   const loadNotifications = useCallback(async () => {
@@ -79,23 +86,35 @@ function AppContent() {
     };
   }, [loadData, loadNotifications]);
 
-  // URL Hash router sync
-  const parseHash = useCallback(() => {
-    const hash = window.location.hash.replace(/^#\/?/, '');
-    if (!hash) {
+  // URL Path router sync (Clean HTML5 History API - no '#' in URLs)
+  const parsePath = useCallback(() => {
+    // If user arrived with an old hash URL (e.g. /#places or /#admin/team), smoothly migrate to clean path
+    if (window.location.hash && window.location.hash.length > 1) {
+      const rawHash = window.location.hash.replace(/^#\/?/, '');
+      if (rawHash && !rawHash.startsWith('featured-')) {
+        const cleanPath = `/${rawHash}`;
+        window.history.replaceState(null, '', cleanPath);
+      }
+    }
+
+    const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '');
+    if (!pathname) {
       setCurrentView('home');
       setViewParam('');
       return;
     }
 
-    const parts = hash.split('/');
+    const parts = pathname.split('/');
     const mainView = parts[0];
     const subParam = parts.slice(1).join('/');
 
     if (mainView === 'places' && subParam) {
       setCurrentView('place-detail');
       setViewParam(subParam);
-    } else if (['places', 'upazilas', 'categories', 'guides', 'about', 'contact', 'admin'].includes(mainView)) {
+    } else if (mainView === 'profile') {
+      setCurrentView('profile');
+      setViewParam(subParam || '');
+    } else if (['places', 'upazilas', 'categories', 'guides', 'community', 'trips', 'profile', 'team', 'about', 'contact', 'admin'].includes(mainView)) {
       setCurrentView(mainView);
       setViewParam(subParam || '');
     } else {
@@ -104,25 +123,35 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    parseHash();
-    window.addEventListener('hashchange', parseHash);
-    return () => window.removeEventListener('hashchange', parseHash);
-  }, [parseHash]);
+    parsePath();
+    window.addEventListener('popstate', parsePath);
+    window.addEventListener('hashchange', parsePath);
+    return () => {
+      window.removeEventListener('popstate', parsePath);
+      window.removeEventListener('hashchange', parsePath);
+    };
+  }, [parsePath]);
 
-  // Navigate helper
+  // Navigate helper (Clean URLs like /places, /community, /trips, /profile, /places/madhutila-eco-park)
   const navigate = (view: string, param?: string) => {
-    let newHash = '';
+    let newPath = '/';
     if (view === 'home') {
-      newHash = '';
+      newPath = '/';
     } else if (view === 'place-detail' && param) {
-      newHash = `places/${param}`;
+      newPath = `/places/${param}`;
+    } else if (view === 'profile' && param) {
+      newPath = `/profile/${param}`;
+    } else if (view === 'profile') {
+      newPath = '/profile';
     } else if (param) {
-      newHash = `${view}/${param}`;
+      newPath = `/${view}/${param}`;
     } else {
-      newHash = view;
+      newPath = `/${view}`;
     }
 
-    window.location.hash = newHash;
+    if (window.location.pathname !== newPath || window.location.hash) {
+      window.history.pushState(null, '', newPath);
+    }
     setCurrentView(view);
     setViewParam(param || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -153,10 +182,30 @@ function AppContent() {
         'উপজেলা সমূহ | শেরপুর ভ্রমণ গাইড',
         'শেরপুর সদর, নালিতাবাড়ী, ঝিনাইগাতী, শ্রীবরদী ও নকলা উপজেলার দর্শনীয় স্থানসমূহ।'
       );
+    } else if (currentView === 'community') {
+      updateMetaTags(
+        'ট্রাভেলার্স কমিউনিটি ও গল্প | শেরপুর ভ্রমণ গাইড',
+        'শেরপুরের পাহাড় ও দর্শনীয় স্থানের আসল ভ্রমণ গল্প, পর্যটকদের অভিজ্ঞতা ও ছবি।'
+      );
+    } else if (currentView === 'trips') {
+      updateMetaTags(
+        'ট্রিপ প্ল্যানার ও বাজেট ক্যালকুলেটর | শেরপুর ভ্রমণ গাইড',
+        'শেরপুর জেলার ১ ও ২ দিনের সেরা ভ্রমণ পরিকল্পনা, দিনভিত্তিক রুট ও বাজেট।'
+      );
+    } else if (currentView === 'profile') {
+      updateMetaTags(
+        'ভ্রমণকারী প্রোফাইল | শেরপুর ভ্রমণ গাইড',
+        'সংরক্ষিত স্থান ও শেরপুর ট্রাভেল কমিউনিটিতে আপনার অবদান ও গল্প।'
+      );
     } else if (currentView === 'guides') {
       updateMetaTags(
         'ভ্রমণ সহায়িকা ও রুট | শেরপুর ভ্রমণ গাইড',
         'ঢাকা থেকে শেরপুর যাতায়াত এবং গারো পাহাড় সীমান্ত ভ্রমণের প্রয়োজনীয় তথ্য ও পরামর্শ।'
+      );
+    } else if (currentView === 'team') {
+      updateMetaTags(
+        'আমাদের টিম ও সম্পাদক প্যানেল | শেরপুর ভ্রমণ গাইড',
+        'শেরপুর ভ্রমণ গাইডের তথ্য সংকলক, পর্যটন গবেষক ও সম্পাদকীয় পর্ষদের পরিচিতি।'
       );
     } else if (currentView === 'about') {
       updateMetaTags(
@@ -169,12 +218,20 @@ function AppContent() {
         'ফোন: +8801944460344, ইমেইল: wpsabbir44@gmail.com - যেকোনো মতামত বা তথ্যের জন্য যোগাযোগ করুন।'
       );
     } else if (currentView === 'admin') {
+      const pageTitle =
+        viewParam === 'analytics'
+          ? 'অ্যানালিটিক্স ড্যাশবোর্ড | শেরপুর ভ্রমণ গাইড'
+          : viewParam === 'team'
+          ? 'টিম ও সম্পাদক প্যানেল | শেরপুর ভ্রমণ গাইড'
+          : viewParam === 'profile'
+          ? 'অ্যাডমিন প্রোফাইল | শেরপুর ভ্রমণ গাইড'
+          : 'অ্যাডমিন ড্যাশবোর্ড | শেরপুর ভ্রমণ গাইড';
       updateMetaTags(
-        'অ্যাডমিন ড্যাশবোর্ড | শেরপুর ভ্রমণ গাইড',
-        'শেরপুর ভ্রমণ গাইড ওয়েবসাইট ব্যবস্থাপনা'
+        pageTitle,
+        'শেরপুর ভ্রমণ গাইড ওয়েবসাইট ব্যবস্থাপনা ও বিজনেস ইন্টেলিজেন্স'
       );
     }
-    recordPageView(window.location.hash || '#home');
+    recordPageView(window.location.pathname || '/');
   }, [currentView, viewParam, destinations]);
 
   // Destination selection
@@ -231,6 +288,7 @@ function AppContent() {
           categories={categories}
           onSelectDestination={handleSelectDestination}
           onBack={() => navigate('places')}
+          onNavigate={(view, param) => navigate(view, param)}
         />
       );
     }
@@ -259,6 +317,10 @@ function AppContent() {
 
     if (currentView === 'guides') {
       return <GuidesPage />;
+    }
+
+    if (currentView === 'team') {
+      return <PublicTeamPage onNavigate={(view, param) => navigate(view, param)} />;
     }
 
     if (currentView === 'about') {
@@ -293,6 +355,7 @@ function AppContent() {
         <AdminDashboard
           destinations={destinations}
           categories={categories}
+          initialTab={viewParam || 'destinations'}
           onRefreshData={loadData}
           onPreviewDestination={(slug) => navigate('place-detail', slug)}
         />

@@ -2,6 +2,8 @@ import React from 'react';
 import { MapPin, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Destination } from '../../types';
 import { UPAZILAS } from '../../data/initialData';
+import { getDestinationAuthor } from '../../utils/authorHelper';
+import { handleImageError } from '../../utils/imageFallback';
 
 interface DestinationCardProps {
   destination: Destination;
@@ -17,6 +19,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
   viewMode = 'grid',
 }) => {
   const upazila = UPAZILAS.find((u) => u.id === destination.upazilaId);
+  const author = getDestinationAuthor(destination);
 
   if (viewMode === 'list') {
     return (
@@ -29,6 +32,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
             src={destination.coverImage || 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=600&q=80'}
             alt={destination.coverImageAlt || destination.titleBn}
             loading="lazy"
+            onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80')}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
           {destination.isFeatured && (
@@ -67,9 +71,20 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
           </div>
 
           <div className="pt-4 mt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-            <span className="flex items-center gap-1 text-emerald-700 font-medium">
-              <CheckCircle2 className="w-3.5 h-3.5" /> যাচাইকৃত তথ্য
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 text-emerald-700 font-medium">
+                <CheckCircle2 className="w-3.5 h-3.5" /> যাচাইকৃত তথ্য
+              </span>
+              <span className="text-gray-300">•</span>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <img
+                  src={author.avatarUrl}
+                  alt=""
+                  className="w-4 h-4 rounded-full object-cover shrink-0 border border-emerald-600/40"
+                />
+                <span className="text-[11px] font-medium text-gray-700">{author.name}</span>
+              </div>
+            </div>
             <span className="inline-flex items-center gap-1 text-[#143E27] font-semibold group-hover:translate-x-1 transition-transform">
               বিস্তারিত দেখুন <ArrowRight className="w-3.5 h-3.5" />
             </span>
@@ -90,6 +105,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
           src={destination.coverImage || 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=600&q=80'}
           alt={destination.coverImageAlt || destination.titleBn}
           loading="lazy"
+          onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80')}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
@@ -127,11 +143,16 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
           </p>
         </div>
 
-        <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between text-xs">
-          <span className="text-emerald-700 font-medium flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5" /> শেরপুর জেলা
-          </span>
-          <span className="inline-flex items-center gap-1 font-semibold text-[#143E27] group-hover:translate-x-1 transition-transform">
+        <div className="pt-3.5 mt-3.5 border-t border-gray-100 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 text-gray-600 text-[11px] truncate max-w-[62%]">
+            <img
+              src={author.avatarUrl}
+              alt=""
+              className="w-4 h-4 rounded-full object-cover shrink-0 border border-emerald-600/40"
+            />
+            <span className="truncate font-medium">{author.name}</span>
+          </div>
+          <span className="inline-flex items-center gap-1 font-semibold text-[#143E27] group-hover:translate-x-1 transition-transform shrink-0">
             বিস্তারিত <ArrowRight className="w-3.5 h-3.5" />
           </span>
         </div>

@@ -14,6 +14,7 @@ import {
 import { Destination, Category } from '../types';
 import { UPAZILAS } from '../data/initialData';
 import { DestinationCard } from '../components/destinations/DestinationCard';
+import { recordAnalyticsEvent } from '../services/analyticsService';
 
 interface PlacesPageProps {
   destinations: Destination[];
@@ -37,6 +38,36 @@ export const PlacesPage: React.FC<PlacesPageProps> = ({
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState<'featured' | 'newest' | 'alphabetical'>('featured');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // Track search
+  React.useEffect(() => {
+    if (searchTerm.trim().length >= 3) {
+      const handler = setTimeout(() => {
+        recordAnalyticsEvent('destination_search', {
+          metadata: { query: searchTerm.trim() },
+        });
+      }, 1000);
+      return () => clearTimeout(handler);
+    }
+  }, [searchTerm]);
+
+  // Track upazila filter
+  React.useEffect(() => {
+    if (selectedUpazila && selectedUpazila !== 'all') {
+      recordAnalyticsEvent('upazila_filter', {
+        metadata: { upazilaId: selectedUpazila },
+      });
+    }
+  }, [selectedUpazila]);
+
+  // Track category filter
+  React.useEffect(() => {
+    if (selectedCategory && selectedCategory !== 'all') {
+      recordAnalyticsEvent('category_filter', {
+        metadata: { categoryId: selectedCategory },
+      });
+    }
+  }, [selectedCategory]);
 
   const categoryNameMap = useMemo(() => {
     return categories.reduce((acc, cat) => {

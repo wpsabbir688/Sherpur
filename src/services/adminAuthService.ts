@@ -75,7 +75,7 @@ export async function verifyAdminCredentials(usernameInput: string, passwordInpu
     return {
       isValid: true,
       role: 'superadmin',
-      name: 'সুপার অ্যাডমিন (প্রধান প্রশাসক)',
+      name: 'মো. সাব্বির হোসেন',
       username: superCreds.username,
     };
   }
