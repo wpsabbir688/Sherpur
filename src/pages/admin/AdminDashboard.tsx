@@ -75,6 +75,7 @@ import { TeamManagementView } from './TeamManagementView';
 import { AdminProfileView } from './AdminProfileView';
 import { AdminChatInboxView } from './AdminChatInboxView';
 import { CommunityModerationView } from './CommunityModerationView';
+import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { getTeamMembers } from '../../services/teamService';
 
 interface AdminDashboardProps {
@@ -1045,42 +1046,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={handleOpenAddForm}
-                  className="px-4 py-2.5 rounded-xl bg-[#143E27] hover:bg-[#0D2618] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-xs cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>নতুন স্থান যোগ করুন</span>
-                </button>
+                {activeTab === 'destinations' && (
+                  <button
+                    onClick={handleOpenAddForm}
+                    className="px-4 py-2.5 rounded-xl bg-[#143E27] hover:bg-[#0D2618] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>নতুন স্থান যোগ করুন</span>
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Quick Metrics Bar in Content Area */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
-                <div className="text-[11px] text-gray-500 font-semibold">মোট দর্শনীয় স্থান</div>
-                <div className="text-2xl font-black text-[#143E27] mt-0.5">{totalDestinations}টি</div>
-                <div className="text-[10px] text-emerald-700 font-medium">৫টি উপজেলায় বিস্তৃত</div>
-              </div>
+            {/* Quick Metrics Bar in Content Area (Only for Destinations) */}
+            {activeTab === 'destinations' && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
+                  <div className="text-[11px] text-gray-500 font-semibold">মোট দর্শনীয় স্থান</div>
+                  <div className="text-2xl font-black text-[#143E27] mt-0.5">{totalDestinations}টি</div>
+                  <div className="text-[10px] text-emerald-700 font-medium">৫টি উপজেলায় বিস্তৃত</div>
+                </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
-                <div className="text-[11px] text-gray-500 font-semibold">প্রকাশিত স্থান</div>
-                <div className="text-2xl font-black text-emerald-600 mt-0.5">{publishedCount}টি</div>
-                <div className="text-[10px] text-gray-400 font-medium">পাবলিক ভিউতে সচল</div>
-              </div>
+                <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
+                  <div className="text-[11px] text-gray-500 font-semibold">প্রকাশিত স্থান</div>
+                  <div className="text-2xl font-black text-emerald-600 mt-0.5">{publishedCount}টি</div>
+                  <div className="text-[10px] text-gray-400 font-medium">পাবলিক ভিউতে সচল</div>
+                </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
-                <div className="text-[11px] text-gray-500 font-semibold">ড্রাফট বা পর্যালোচনায়</div>
-                <div className="text-2xl font-black text-amber-600 mt-0.5">{draftCount}টি</div>
-                <div className="text-[10px] text-gray-400 font-medium">অপ্রকাশিত অবস্থায় আছে</div>
-              </div>
+                <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
+                  <div className="text-[11px] text-gray-500 font-semibold">ড্রাফট বা পর্যালোচনায়</div>
+                  <div className="text-2xl font-black text-amber-600 mt-0.5">{draftCount}টি</div>
+                  <div className="text-[10px] text-gray-400 font-medium">অপ্রকাশিত অবস্থায় আছে</div>
+                </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
-                <div className="text-[11px] text-gray-500 font-semibold">টিম মেম্বার</div>
-                <div className="text-2xl font-black text-purple-600 mt-0.5">{teamMembersCount} জন</div>
-                <div className="text-[10px] text-gray-400 font-medium">সম্পাদকীয় বোর্ডে যুক্ত</div>
+                <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-2xs">
+                  <div className="text-[11px] text-gray-500 font-semibold">টিম মেম্বার</div>
+                  <div className="text-2xl font-black text-purple-600 mt-0.5">{teamMembersCount} জন</div>
+                  <div className="text-[10px] text-gray-400 font-medium">সম্পাদকীয় বোর্ডে যুক্ত</div>
+                </div>
               </div>
-            </div>
+            )}
 
       {/* Tab 1: Destinations Table */}
       {activeTab === 'destinations' && (
@@ -1674,7 +1679,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* MODULE 3.5: Live Chat Inbox */}
       {activeTab === 'chat' && (
-        <AdminChatInboxView />
+        <ErrorBoundary fallbackTitle="লাইভ চ্যাট ইনবক্স লোড করতে সমস্যা হয়েছে">
+          <AdminChatInboxView />
+        </ErrorBoundary>
       )}
 
       {/* MODULE 3.6: Community and Report Moderation */}

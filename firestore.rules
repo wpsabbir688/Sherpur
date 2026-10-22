@@ -149,6 +149,106 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // User Profile Validation
+    function isValidUserProfile(data) {
+      return data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128 &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 150 &&
+             data.username is string && data.username.size() > 0 && data.username.size() <= 100 &&
+             (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 1500)) &&
+             (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 150)) &&
+             (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1500)) &&
+             (!('location' in data) || data.location == null || (data.location is string && data.location.size() <= 150)) &&
+             (!('savedDestinationIds' in data) || (data.savedDestinationIds is list && data.savedDestinationIds.size() <= 500)) &&
+             (!('followersCount' in data) || (data.followersCount is int || data.followersCount is float)) &&
+             (!('followingCount' in data) || (data.followingCount is int || data.followingCount is float)) &&
+             (!('postsCount' in data) || (data.postsCount is int || data.postsCount is float));
+    }
+
+    // Community Post Validation
+    function isValidCommunityPost(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.authorId is string && data.authorId.size() <= 128 &&
+             data.caption is string && data.caption.size() > 0 && data.caption.size() <= 1000 &&
+             (!('travelStory' in data) || (data.travelStory is string && data.travelStory.size() <= 15000)) &&
+             (!('photos' in data) || (data.photos is list && data.photos.size() <= 10)) &&
+             (!('status' in data) || data.status in ['published', 'hidden', 'flagged']);
+    }
+
+    // Post Comment Validation
+    function isValidPostComment(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.postId is string && data.postId.size() <= 128 &&
+             data.authorId is string && data.authorId.size() <= 128 &&
+             data.text is string && data.text.size() > 0 && data.text.size() <= 2000;
+    }
+
+    // Users collection (User Profiles)
+    match /users/{userId} {
+      allow get, list: if true;
+      allow create: if isValidId(userId) && isSignedIn() && (request.auth.uid == userId || isVerifiedAdmin()) && isValidUserProfile(incoming());
+      allow update: if isValidId(userId) && isSignedIn() && (request.auth.uid == userId || isVerifiedAdmin()) && isValidUserProfile(incoming());
+      allow delete: if isVerifiedAdmin();
+    }
+
+    // Community Posts collection
+    match /posts/{postId} {
+      allow get, list: if true;
+      allow create: if isValidId(postId) && isSignedIn() && (incoming().authorId == request.auth.uid || isVerifiedAdmin()) && isValidCommunityPost(incoming());
+      allow update: if isValidId(postId) && (
+        (isSignedIn() && (resource.data.authorId == request.auth.uid || isVerifiedAdmin())) ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'commentsCount', 'sharesCount'])
+      );
+      allow delete: if isValidId(postId) && isSignedIn() && (resource.data.authorId == request.auth.uid || isVerifiedAdmin());
+    }
+
+    // Post Comments collection
+    match /post_comments/{commentId} {
+      allow get, list: if true;
+      allow create: if isValidId(commentId) && isSignedIn() && incoming().authorId == request.auth.uid && isValidPostComment(incoming());
+      allow update, delete: if isValidId(commentId) && isSignedIn() && (resource.data.authorId == request.auth.uid || isVerifiedAdmin());
+    }
+
+    // Post Likes collection
+    match /post_likes/{likeId} {
+      allow get, list: if true;
+      allow create: if isValidId(likeId) && isSignedIn() && incoming().userId == request.auth.uid;
+      allow delete: if isValidId(likeId) && isSignedIn() && (resource.data.userId == request.auth.uid || isVerifiedAdmin());
+    }
+
+    // Saved Items collection
+    match /saved_items/{saveId} {
+      allow get, list: if isSignedIn() && (resource.data.userId == request.auth.uid || isVerifiedAdmin());
+      allow create: if isValidId(saveId) && isSignedIn() && incoming().userId == request.auth.uid;
+      allow delete: if isValidId(saveId) && isSignedIn() && (resource.data.userId == request.auth.uid || isVerifiedAdmin());
+    }
+
+    // Follows collection
+    match /follows/{followId} {
+      allow get, list: if true;
+      allow create: if isValidId(followId) && isSignedIn() && incoming().followerId == request.auth.uid;
+      allow delete: if isValidId(followId) && isSignedIn() && (resource.data.followerId == request.auth.uid || isVerifiedAdmin());
+    }
+
+    // Chat Conversations collection
+    match /chat_conversations/{conversationId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(conversationId);
+      allow delete: if isVerifiedAdmin();
+    }
+
+    // Chat Messages collection
+    match /chat_messages/{messageId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(messageId);
+      allow delete: if isVerifiedAdmin();
+    }
+
+    // Reports collection
+    match /reports/{reportId} {
+      allow create: if isValidId(reportId);
+      allow get, list, update, delete: if isVerifiedAdmin();
+    }
+
     // Test collection for boot connectivity check
     match /test/{docId} {
       allow read: if true;

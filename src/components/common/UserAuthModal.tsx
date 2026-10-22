@@ -177,9 +177,22 @@ export const UserAuthModal: React.FC<UserAuthModalProps> = ({
 
           {/* Feedback messages */}
           {(localError || error) && (
-            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-              <span>{localError || error}</span>
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span className="font-medium leading-relaxed">{localError || error}</span>
+              </div>
+              {(localError || error)?.includes('গুগল') && (
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                  className="w-full py-2 px-3 rounded-xl bg-[#143E27] hover:bg-[#0D2618] text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>এখনই গুগল দিয়ে এগিয়ে যান</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -196,9 +209,9 @@ export const UserAuthModal: React.FC<UserAuthModalProps> = ({
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl border border-gray-300 hover:bg-gray-50 active:bg-gray-100 text-gray-700 font-bold text-xs flex items-center justify-center gap-2.5 transition cursor-pointer shadow-2xs"
+              className="w-full py-2.5 px-4 rounded-xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 active:bg-emerald-100 text-gray-800 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-2xs"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -216,7 +229,10 @@ export const UserAuthModal: React.FC<UserAuthModalProps> = ({
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>গুগল অ্যাকাউন্ট দিয়ে এক ক্লিকে এগিয়ে যান</span>
+              <span>গুগল দিয়ে দ্রুত প্রবেশ করুন</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-700 text-white font-medium ml-1">
+                সুপারিশকৃত
+              </span>
             </button>
           )}
 

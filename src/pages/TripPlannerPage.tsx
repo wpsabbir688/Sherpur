@@ -22,6 +22,7 @@ import { CURATED_TRIP_PLANS } from '../services/tripPlannerService';
 import { Destination } from '../types';
 import { TripPlan, TravelStyle } from '../types/community';
 import { handleImageError } from '../utils/imageFallback';
+import { SherpurGoogleMap } from '../components/map/SherpurGoogleMap';
 
 interface TripPlannerPageProps {
   destinations: Destination[];
@@ -237,6 +238,26 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({
                   </div>
                 ))}
               </div>
+
+              {/* Trip Itinerary Map */}
+              {planDestinations.length > 0 && (
+                <div className="pt-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span className="font-bold text-gray-800 flex items-center gap-1.5">
+                      <Compass className="w-4 h-4 text-emerald-700" />
+                      <span>ট্রিপ রুট ও স্পট মানচিত্র</span>
+                    </span>
+                    <span>{planDestinations.length}টি স্পট ম্যাপে চিহ্নিত</span>
+                  </div>
+                  <SherpurGoogleMap
+                    destinations={planDestinations}
+                    onSelectDestination={(d) => onSelectDestination(d.slug)}
+                    onNavigateToDetail={(slug) => onSelectDestination(slug)}
+                    height="320px"
+                    zoom={10}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

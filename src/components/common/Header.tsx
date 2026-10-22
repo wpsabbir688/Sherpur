@@ -192,6 +192,18 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <button
+              onClick={() => handleNavClick('map')}
+              className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                currentView === 'map'
+                  ? 'bg-[#1E5638]/10 text-[#143E27] font-bold'
+                  : 'hover:bg-gray-100 hover:text-black'
+              }`}
+            >
+              <MapPin className="w-4 h-4 text-emerald-700" />
+              <span>ম্যাপ</span>
+            </button>
+
+            <button
               onClick={() => handleNavClick('categories')}
               className={`px-2.5 2xl:px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                 currentView === 'categories'
@@ -494,6 +506,21 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 )}
               </div>
+
+              <button
+                onClick={() => handleNavClick('map')}
+                className={`w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition cursor-pointer touch-manipulation ${
+                  currentView === 'map'
+                    ? 'bg-emerald-100 text-[#143E27]'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>শেরপুর মানচিত্র</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </button>
 
               <button
                 onClick={() => handleNavClick('categories')}

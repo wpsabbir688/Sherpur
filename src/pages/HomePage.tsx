@@ -23,6 +23,7 @@ import { UPAZILAS } from '../data/initialData';
 import { DestinationCard } from '../components/destinations/DestinationCard';
 import { INITIAL_COMMUNITY_POSTS } from '../services/communityService';
 import { handleImageError } from '../utils/imageFallback';
+import { SherpurGoogleMap } from '../components/map/SherpurGoogleMap';
 
 interface HomePageProps {
   destinations: Destination[];
@@ -265,6 +266,43 @@ export const HomePage: React.FC<HomePageProps> = ({
               categoryNameMap={categoryNameMap}
             />
           ))}
+        </div>
+      </section>
+
+      {/* Interactive Sherpur Map Showcase */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 space-y-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-1.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-semibold">
+                <Compass className="w-3.5 h-3.5 text-emerald-700" />
+                <span>লাইভ গুগল ম্যাপস প্ল্যাটফর্ম</span>
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#143E27]">
+                শেরপুর পর্যটন মানচিত্র
+              </h2>
+              <p className="text-sm text-gray-600 max-w-2xl">
+                গারো পাহাড়, সুবিশাল শালবন ও ঐতিহাসিক স্থানগুলোর সুনির্দিষ্ট ভৌগোলিক অবস্থান ও ড্রাইভ রুট ইন্টারেক্টিভ ম্যাপে দেখুন।
+              </p>
+            </div>
+
+            <button
+              onClick={() => onNavigate('map')}
+              className="px-5 py-2.5 rounded-xl bg-[#143E27] hover:bg-[#0D2618] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs shrink-0"
+            >
+              <MapPin className="w-4 h-4 text-amber-300" />
+              <span>পূর্ণাঙ্গ ম্যাপে ঘুরে দেখুন</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <SherpurGoogleMap
+            destinations={publishedDestinations}
+            onSelectDestination={(dest) => onSelectDestination(dest.slug)}
+            onNavigateToDetail={(slug) => onSelectDestination(slug)}
+            height="460px"
+            zoom={10}
+          />
         </div>
       </section>
 

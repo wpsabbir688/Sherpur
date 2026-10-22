@@ -15,6 +15,7 @@ import { Destination, Category } from '../types';
 import { UPAZILAS } from '../data/initialData';
 import { DestinationCard } from '../components/destinations/DestinationCard';
 import { recordAnalyticsEvent } from '../services/analyticsService';
+import { SherpurGoogleMap } from '../components/map/SherpurGoogleMap';
 
 interface PlacesPageProps {
   destinations: Destination[];
@@ -37,7 +38,7 @@ export const PlacesPage: React.FC<PlacesPageProps> = ({
   const [selectedUpazila, setSelectedUpazila] = useState(initialUpazila);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState<'featured' | 'newest' | 'alphabetical'>('featured');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
 
   // Track search
   React.useEffect(() => {
@@ -249,13 +250,41 @@ export const PlacesPage: React.FC<PlacesPageProps> = ({
             >
               <List className="w-4 h-4" />
             </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`px-2 py-1.5 rounded-lg border transition flex items-center gap-1 cursor-pointer ${
+                viewMode === 'map'
+                  ? 'bg-emerald-50 border-emerald-300 text-[#143E27] font-semibold'
+                  : 'border-gray-200 text-gray-400 hover:text-gray-700'
+              }`}
+              title="গুগল ম্যাপস ভিউ"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span className="text-[11px]">ম্যাপ</span>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Destinations Results */}
       {filteredDestinations.length > 0 ? (
-        viewMode === 'grid' ? (
+        viewMode === 'map' ? (
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between text-xs text-gray-600">
+              <span className="font-semibold text-gray-800">
+                ম্যাপে ফিল্টারকৃত {filteredDestinations.length}টি স্থান প্রদর্শিত হচ্ছে
+              </span>
+              <span>যেকোনো পিনে ক্লিক করে বিস্তারিত ও ডিরেকশন দেখুন</span>
+            </div>
+            <SherpurGoogleMap
+              destinations={filteredDestinations}
+              onSelectDestination={(dest) => onSelectDestination(dest.slug)}
+              onNavigateToDetail={(slug) => onSelectDestination(slug)}
+              height="600px"
+              zoom={10}
+            />
+          </div>
+        ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredDestinations.map((dest) => (
               <DestinationCard

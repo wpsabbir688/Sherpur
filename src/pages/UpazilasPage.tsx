@@ -3,6 +3,7 @@ import { MapPin, Navigation, Sparkles, Building2, Trees, Waves } from 'lucide-re
 import { Destination, UpazilaId, Category } from '../types';
 import { UPAZILAS } from '../data/initialData';
 import { DestinationCard } from '../components/destinations/DestinationCard';
+import { SherpurGoogleMap } from '../components/map/SherpurGoogleMap';
 
 interface UpazilasPageProps {
   destinations: Destination[];
@@ -89,6 +90,36 @@ export const UpazilasPage: React.FC<UpazilasPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Upazila Google Map Overview */}
+      {upazilaDestinations.length > 0 && (
+        <div className="bg-white rounded-3xl border border-gray-200 p-5 sm:p-6 shadow-xs space-y-3">
+          <div className="flex items-center justify-between text-xs text-gray-600">
+            <span className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-emerald-700" />
+              <span>{activeUpazila.nameBn} উপজেলার পর্যটন মানচিত্র</span>
+            </span>
+            <span className="hidden sm:inline text-gray-400">
+              পিনে ক্লিক করে রুট ও বিস্তারিত জানুন
+            </span>
+          </div>
+          <SherpurGoogleMap
+            destinations={upazilaDestinations}
+            onSelectDestination={(dest) => onSelectDestination(dest.slug)}
+            onNavigateToDetail={(slug) => onSelectDestination(slug)}
+            height="360px"
+            zoom={11}
+            center={
+              upazilaDestinations[0]?.latitude && upazilaDestinations[0]?.longitude
+                ? {
+                    lat: upazilaDestinations[0].latitude,
+                    lng: upazilaDestinations[0].longitude,
+                  }
+                : undefined
+            }
+          />
+        </div>
+      )}
 
       {/* Upazila Destinations Grid */}
       <div className="space-y-6">

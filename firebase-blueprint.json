@@ -340,6 +340,156 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["username", "fullName"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with travel stats and bio.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 150 },
+        "username": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "photoURL": { "type": "string", "maxLength": 1500 },
+        "bio": { "type": "string", "maxLength": 1000 },
+        "location": { "type": "string", "maxLength": 150 },
+        "savedDestinationIds": { "type": "array" },
+        "followersCount": { "type": "number" },
+        "followingCount": { "type": "number" },
+        "postsCount": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "displayName", "username"]
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "Social travel feed posts shared by travelers.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "authorId": { "type": "string", "maxLength": 128 },
+        "authorName": { "type": "string", "maxLength": 150 },
+        "authorUsername": { "type": "string", "maxLength": 100 },
+        "authorAvatar": { "type": "string", "maxLength": 1500 },
+        "caption": { "type": "string", "maxLength": 500 },
+        "travelStory": { "type": "string", "maxLength": 10000 },
+        "photos": { "type": "array" },
+        "destinationId": { "type": "string", "maxLength": 100 },
+        "destinationTitle": { "type": "string", "maxLength": 150 },
+        "upazilaId": { "type": "string", "maxLength": 50 },
+        "likesCount": { "type": "number" },
+        "commentsCount": { "type": "number" },
+        "sharesCount": { "type": "number" },
+        "status": { "type": "string", "enum": ["published", "hidden", "flagged"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "authorId", "caption", "status", "createdAt"]
+    },
+    "PostComment": {
+      "title": "PostComment",
+      "description": "Comments left on community posts.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "postId": { "type": "string", "maxLength": 128 },
+        "authorId": { "type": "string", "maxLength": 128 },
+        "authorName": { "type": "string", "maxLength": 150 },
+        "authorUsername": { "type": "string", "maxLength": 100 },
+        "text": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["published", "hidden"] }
+      },
+      "required": ["id", "postId", "authorId", "text", "createdAt"]
+    },
+    "PostLike": {
+      "title": "PostLike",
+      "description": "Unique like record preventing duplicate likes.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "postId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "postId", "userId"]
+    },
+    "SavedItem": {
+      "title": "SavedItem",
+      "description": "Bookmarked destination or post by a user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "targetType": { "type": "string", "enum": ["destination", "post"] },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "targetType", "targetId"]
+    },
+    "UserFollow": {
+      "title": "UserFollow",
+      "description": "Follow relationship between two users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "followerId": { "type": "string", "maxLength": 128 },
+        "followingId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "followerId", "followingId"]
+    },
+    "ChatConversation": {
+      "title": "ChatConversation",
+      "description": "Live support chat conversation between visitor and admin.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "visitorId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 150 },
+        "isGuest": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["open", "pending", "answered", "closed"] },
+        "lastMessage": { "type": "string", "maxLength": 2000 },
+        "lastMessageTime": { "type": "string" },
+        "unreadByAdminCount": { "type": "number" },
+        "unreadByUserCount": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "visitorId", "status"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual message inside a chat thread.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "conversationId": { "type": "string", "maxLength": 128 },
+        "senderType": { "type": "string", "enum": ["user", "admin"] },
+        "senderId": { "type": "string", "maxLength": 128 },
+        "senderName": { "type": "string", "maxLength": 150 },
+        "text": { "type": "string", "maxLength": 4000 },
+        "timestamp": { "type": "string" },
+        "status": { "type": "string", "enum": ["sent", "delivered", "read"] }
+      },
+      "required": ["id", "conversationId", "senderType", "text", "timestamp"]
+    },
+    "ContentReport": {
+      "title": "ContentReport",
+      "description": "Spam or inappropriate content reports submitted by users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "targetType": { "type": "string", "enum": ["post", "comment", "destination", "user"] },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "reason": { "type": "string", "maxLength": 300 },
+        "reportedBy": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["pending", "resolved", "dismissed"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "targetType", "targetId", "reason", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -378,6 +528,42 @@
     "/adminProfiles/{profileId}": {
       "schema": "AdminProfile",
       "description": "Administrator personal profiles"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Registered traveler profiles"
+    },
+    "/posts/{postId}": {
+      "schema": "CommunityPost",
+      "description": "Travel stories and photo posts"
+    },
+    "/post_comments/{commentId}": {
+      "schema": "PostComment",
+      "description": "Comments on community travel posts"
+    },
+    "/post_likes/{likeId}": {
+      "schema": "PostLike",
+      "description": "Likes on community posts"
+    },
+    "/saved_items/{saveId}": {
+      "schema": "SavedItem",
+      "description": "User bookmarked destinations and posts"
+    },
+    "/follows/{followId}": {
+      "schema": "UserFollow",
+      "description": "Follow relationships between travelers"
+    },
+    "/chat_conversations/{conversationId}": {
+      "schema": "ChatConversation",
+      "description": "Real-time support and travel query threads"
+    },
+    "/chat_messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Messages inside chat conversations"
+    },
+    "/reports/{reportId}": {
+      "schema": "ContentReport",
+      "description": "Community moderation reports"
     }
   }
 }

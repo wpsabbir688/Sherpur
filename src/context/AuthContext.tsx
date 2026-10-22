@@ -221,14 +221,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserProfile(profile);
       return true;
     } catch (err: any) {
-      console.error('Email Sign-Up error:', err);
       let msg = 'রেজিস্ট্রেশন সম্পন্ন করা সম্ভব হয়নি।';
-      if (err.code === 'auth/email-already-in-use') {
+      if (err.code === 'auth/operation-not-allowed') {
+        msg = 'ইমেইল/পাসওয়ার্ড সাইন-ইন বর্তমানে সক্রিয় নয়। অনুগ্রহ করে "গুগল অ্যাকাউন্ট দিয়ে এগিয়ে যান" বাটনটি ব্যবহার করুন।';
+      } else if (err.code === 'auth/email-already-in-use') {
         msg = 'এই ইমেইল দিয়ে ইতোমধ্যে একটি অ্যাকাউন্ট রয়েছে।';
       } else if (err.code === 'auth/weak-password') {
         msg = 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।';
       } else if (err.code === 'auth/invalid-email') {
         msg = 'ইমেইল ঠিকানাটি সঠিক নয়।';
+      } else {
+        console.warn('Sign-up status:', err.code || err.message);
       }
       setError(msg);
       return false;
@@ -241,10 +244,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signInWithEmailAndPassword(auth, email.trim(), pass);
       return true;
     } catch (err: any) {
-      console.error('Email Sign-In error:', err);
       let msg = 'ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।';
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+      if (err.code === 'auth/operation-not-allowed') {
+        msg = 'ইমেইল/পাসওয়ার্ড সাইন-ইন বর্তমানে সক্রিয় নয়। অনুগ্রহ করে "গুগল অ্যাকাউন্ট দিয়ে এগিয়ে যান" বাটনটি ব্যবহার করুন।';
+      } else if (
+        err.code === 'auth/user-not-found' ||
+        err.code === 'auth/wrong-password' ||
+        err.code === 'auth/invalid-credential'
+      ) {
         msg = 'ইমেইল অথবা পাসওয়ার্ড ভুল হয়েছে।';
+      } else if (err.code === 'auth/too-many-requests') {
+        msg = 'অতিরিক্ত ব্যর্থ চেষ্টার কারণে সাময়িকভাবে ব্লক করা হয়েছে। কিছুক্ষণ পর চেষ্টা করুন অথবা গুগল দিয়ে প্রবেশ করুন।';
+      } else {
+        console.warn('Sign-in status:', err.code || err.message);
       }
       setError(msg);
       return false;
@@ -257,8 +269,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await sendPasswordResetEmail(auth, email.trim());
       return true;
     } catch (err: any) {
-      console.error('Password reset error:', err);
-      setError('পাসওয়ার্ড রিসেট ইমেইল পাঠাতে সমস্যা হয়েছে। সঠিক ইমেইল দিন।');
+      let msg = 'পাসওয়ার্ড রিসেট ইমেইল পাঠাতে সমস্যা হয়েছে। সঠিক ইমেইল দিন।';
+      if (err.code === 'auth/operation-not-allowed') {
+        msg = 'ইমেইল পুনরুদ্ধার বর্তমানে সক্রিয় নয়। অনুগ্রহ করে গুগল সাইন-ইন ব্যবহার করুন।';
+      } else {
+        console.warn('Password reset status:', err.code || err.message);
+      }
+      setError(msg);
       return false;
     }
   };

@@ -10,6 +10,7 @@ import { CategoriesPage } from './pages/CategoriesPage';
 import { GuidesPage } from './pages/GuidesPage';
 import { CommunityPage } from './pages/CommunityPage';
 import { TripPlannerPage } from './pages/TripPlannerPage';
+import { SherpurMapPage } from './pages/SherpurMapPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
@@ -19,6 +20,7 @@ import { AdminLoginModal } from './pages/admin/AdminLoginModal';
 import { UserAuthModal } from './components/common/UserAuthModal';
 import { FloatingChatWidget } from './components/common/FloatingChatWidget';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Destination, Category, EventNotification } from './types';
 import { getDestinations } from './services/destinationService';
 import { getCategories } from './services/categoryService';
@@ -76,13 +78,21 @@ function AppContent() {
     }
   }, []);
 
+  // Google Maps Platform Quota Defense listener state
+  const [isGmpQuotaExceeded, setIsGmpQuotaExceeded] = useState(false);
+
   useEffect(() => {
     testConnection();
     loadData();
     loadNotifications();
     const stopHeartbeat = startPresenceHeartbeat();
+
+    const handleQuotaExceeded = () => setIsGmpQuotaExceeded(true);
+    window.addEventListener('gmp-quota-exceeded', handleQuotaExceeded);
+
     return () => {
       stopHeartbeat();
+      window.removeEventListener('gmp-quota-exceeded', handleQuotaExceeded);
     };
   }, [loadData, loadNotifications]);
 
@@ -114,7 +124,7 @@ function AppContent() {
     } else if (mainView === 'profile') {
       setCurrentView('profile');
       setViewParam(subParam || '');
-    } else if (['places', 'upazilas', 'categories', 'guides', 'community', 'trips', 'profile', 'team', 'about', 'contact', 'admin'].includes(mainView)) {
+    } else if (['places', 'upazilas', 'map', 'categories', 'guides', 'community', 'trips', 'profile', 'team', 'about', 'contact', 'admin'].includes(mainView)) {
       setCurrentView(mainView);
       setViewParam(subParam || '');
     } else {
@@ -304,6 +314,16 @@ function AppContent() {
       );
     }
 
+    if (currentView === 'map') {
+      return (
+        <SherpurMapPage
+          destinations={destinations}
+          categories={categories}
+          onNavigate={(view, param) => navigate(view, param)}
+        />
+      );
+    }
+
     if (currentView === 'categories') {
       return (
         <CategoriesPage
@@ -317,6 +337,39 @@ function AppContent() {
 
     if (currentView === 'guides') {
       return <GuidesPage />;
+    }
+
+    if (currentView === 'community') {
+      return (
+        <CommunityPage
+          destinations={destinations}
+          onSelectDestination={handleSelectDestination}
+          onNavigate={(view, param) => navigate(view, param)}
+          onOpenAuthModal={() => setIsUserAuthModalOpen(true)}
+        />
+      );
+    }
+
+    if (currentView === 'trips') {
+      return (
+        <TripPlannerPage
+          destinations={destinations}
+          onSelectDestination={handleSelectDestination}
+          onNavigate={(view, param) => navigate(view, param)}
+        />
+      );
+    }
+
+    if (currentView === 'profile') {
+      return (
+        <UserProfilePage
+          destinations={destinations}
+          viewUsername={viewParam}
+          onSelectDestination={handleSelectDestination}
+          onNavigate={(view, param) => navigate(view, param)}
+          onOpenAuthModal={() => setIsUserAuthModalOpen(true)}
+        />
+      );
     }
 
     if (currentView === 'team') {
@@ -338,27 +391,33 @@ function AppContent() {
             <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto border border-amber-200">
               🔒
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">অনুমোদিত প্রবেশাধিকার প্রয়োজন</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {viewParam === 'chat' ? 'লাইভ চ্যাট ইনবক্স অ্যাক্সেস' : 'অনুমোদিত প্রবেশাধিকার প্রয়োজন'}
+            </h2>
             <p className="text-xs text-gray-600">
-              অ্যাডমিন ড্যাশবোর্ড ব্যবহারের জন্য অনুমোদিত গুগল অ্যাকাউন্ট দিয়ে সাইন-ইন করতে হবে।
+              {viewParam === 'chat'
+                ? 'শেরপুর ভ্রমণ ডেস্কের লাইভ চ্যাট ইনবক্স দেখার জন্য অনুমোদিত অ্যাডমিন হিসেবে সাইন-ইন করুন।'
+                : 'অ্যাডমিন ড্যাশবোর্ড ব্যবহারের জন্য অনুমোদিত অ্যাকাউন্ট দিয়ে সাইন-ইন করতে হবে।'}
             </p>
             <button
               onClick={() => setIsAdminLoginOpen(true)}
-              className="px-6 py-2.5 rounded-xl bg-[#143E27] text-white font-bold text-xs hover:bg-[#0D2618] transition cursor-pointer"
+              className="px-6 py-2.5 rounded-xl bg-[#143E27] text-white font-bold text-xs hover:bg-[#0D2618] transition cursor-pointer shadow-xs"
             >
-              সাইন-ইন করুন
+              অ্যাডমিন সাইন-ইন করুন
             </button>
           </div>
         );
       }
       return (
-        <AdminDashboard
-          destinations={destinations}
-          categories={categories}
-          initialTab={viewParam || 'destinations'}
-          onRefreshData={loadData}
-          onPreviewDestination={(slug) => navigate('place-detail', slug)}
-        />
+        <ErrorBoundary fallbackTitle="অ্যাডমিন ড্যাশবোর্ড লোড করতে সমস্যা হয়েছে">
+          <AdminDashboard
+            destinations={destinations}
+            categories={categories}
+            initialTab={viewParam || 'destinations'}
+            onRefreshData={loadData}
+            onPreviewDestination={(slug) => navigate('place-detail', slug)}
+          />
+        </ErrorBoundary>
       );
     }
 
@@ -371,10 +430,28 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBFBFA] text-[#1D2924]">
+      {isGmpQuotaExceeded && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2.5 text-xs md:text-sm text-center sticky top-0 z-50 shadow-xs">
+          <span>
+            Google Maps Platform quota reached. If you are the app owner, visit{' '}
+            <a
+              href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio#quota_exceeded_errors"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-semibold text-amber-950 hover:text-amber-800"
+            >
+              maps developer site
+            </a>{' '}
+            for instructions to update your account.
+          </span>
+        </div>
+      )}
+
       <Header
         currentView={currentView}
         onNavigate={(view, param) => navigate(view, param)}
         onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
+        onOpenUserAuth={() => setIsUserAuthModalOpen(true)}
         unreadNotificationsCount={unreadNotificationsCount}
         onOpenNotifications={() => setIsNotificationDrawerOpen(true)}
       />
@@ -390,6 +467,8 @@ function AppContent() {
 
       <Footer onNavigate={(view, param) => navigate(view, param)} />
 
+      <FloatingChatWidget onOpenAuthModal={() => setIsUserAuthModalOpen(true)} />
+
       <NotificationDrawer
         isOpen={isNotificationDrawerOpen}
         onClose={() => setIsNotificationDrawerOpen(false)}
@@ -399,12 +478,21 @@ function AppContent() {
         onNavigateToUpazila={(upId) => navigate('upazilas', upId)}
       />
 
+      <UserAuthModal
+        isOpen={isUserAuthModalOpen}
+        onClose={() => setIsUserAuthModalOpen(false)}
+        onOpenAdminLogin={() => {
+          setIsUserAuthModalOpen(false);
+          setIsAdminLoginOpen(true);
+        }}
+      />
+
       <AdminLoginModal
         isOpen={isAdminLoginOpen}
         onClose={() => setIsAdminLoginOpen(false)}
         onSuccess={() => {
           setIsAdminLoginOpen(false);
-          navigate('admin');
+          navigate('admin', viewParam || undefined);
         }}
       />
     </div>

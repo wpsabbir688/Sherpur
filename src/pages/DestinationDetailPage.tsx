@@ -24,6 +24,7 @@ import { Destination, Category } from '../types';
 import { UPAZILAS } from '../data/initialData';
 import { recordAnalyticsEvent } from '../services/analyticsService';
 import { getDestinationAuthor } from '../utils/authorHelper';
+import { SherpurGoogleMap } from '../components/map/SherpurGoogleMap';
 
 interface DestinationDetailPageProps {
   destination: Destination;
@@ -302,6 +303,52 @@ export const DestinationDetailPage: React.FC<DestinationDetailPageProps> = ({
               <div className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-line">
                 {destination.howToGetThereBn}
               </div>
+            </section>
+          )}
+
+          {/* Interactive Google Map of Location */}
+          {destination.latitude && destination.longitude && (
+            <section className="space-y-4 bg-white rounded-2xl border border-gray-200 p-6 shadow-2xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-xl font-bold text-[#143E27] flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-emerald-700" />
+                  <span>গুগল ম্যাপে সুনির্দিষ্ট অবস্থান ও রুট</span>
+                </h2>
+                <a
+                  href={
+                    destination.googleMapsUrl ||
+                    `https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200"
+                >
+                  <span>গুগল ম্যাপসে খুলুন</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+
+              <SherpurGoogleMap
+                destinations={[
+                  destination,
+                  ...allDestinations
+                    .filter((d) => d.id !== destination.id && typeof d.latitude === 'number')
+                    .slice(0, 5),
+                ]}
+                selectedDestinationId={destination.id}
+                onSelectDestination={(d) => {
+                  if (d.id !== destination.id) {
+                    onSelectDestination(d.slug);
+                  }
+                }}
+                onNavigateToDetail={(slug) => onSelectDestination(slug)}
+                height="380px"
+                zoom={13}
+                center={{ lat: destination.latitude, lng: destination.longitude }}
+              />
+              <p className="text-xs text-gray-500">
+                ম্যাপের মার্কার টেনে বা জুম করে আশেপাশের রাস্তা ও পরিবেশ দেখুন। সরাসরি লাইভ জিপিএস নেভিগেশনের জন্য 'গুগল ম্যাপসে খুলুন' বাটনে চাপ দিন।
+              </p>
             </section>
           )}
 
